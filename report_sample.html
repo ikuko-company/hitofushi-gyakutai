@@ -14,7 +14,7 @@
       <p class="text-xs font-semibold uppercase tracking-wider text-teal-700">職員向け・周知資料</p>
       <h1 class="mt-2 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">虐待防止委員会</h1>
       <p class="mt-1 text-base text-slate-600">議事要旨・マニュアル変更点・図解レポート</p>
-      <p class="mt-2 text-sm text-slate-500">【事業所名を記入】</p>
+      <p class="mt-2 text-sm text-slate-500">{{ office_name }}</p>
     </header>
 
     <!-- ジャンプリンク（LINE縦スクロール対策） -->
@@ -30,7 +30,7 @@
     <!-- サマリー：開催日・一行サマリ・ToDo件数 -->
     <section id="section-date" class="mb-6 scroll-mt-4 rounded-2xl bg-gradient-to-br from-teal-600 to-teal-800 p-5 text-white shadow-lg">
       <p class="text-xs font-medium text-teal-100">委員会開催日</p>
-      <p class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">【例：2026年4月10日（木）】</p>
+      <p class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{{ event_date }}</p>
       <div class="mt-4 rounded-xl bg-white/10 p-4 backdrop-blur-sm">
         <p class="text-xs font-semibold text-teal-100">今回の変更（一行サマリ）</p>
         <p class="mt-1 text-base font-medium leading-relaxed">【例：身体拘束の判断基準を厳格化し、記録様式を改定しました。】</p>
