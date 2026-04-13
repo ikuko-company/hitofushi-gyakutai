@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>年度スケジュール作成及び進捗管理表</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sheet: {
+              base: '#fff7f0',
+              header: '#ffe8d6',
+              headerDeep: '#ffd4b8',
+              grid: '#fdeedf',
+              facility: '#eff6ff',
+              facilityAlt: '#dbeafe',
+            },
+          },
+          fontFamily: {
+            sans: ['"Segoe UI"', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* 表の罫線を Excel 風に細く統一（CDN では @apply 非対応のためプレーン CSS） */
+    .dash-table {
+      border-collapse: collapse;
+    }
+    .dash-table th,
+    .dash-table td {
+      border: 1px solid rgb(254 215 170);
+    }
+    .cell-input {
+      width: 100%;
+      min-width: 4.5rem;
+      border-radius: 0.125rem;
+      border-width: 0;
+      background-color: rgb(255 255 255 / 0.9);
+      padding: 0.25rem 0.375rem;
+      font-size: 0.75rem;
+      line-height: 1.25rem;
+      color: rgb(30 41 59);
+      box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06);
+    }
+    .cell-input::placeholder {
+      color: rgb(254 215 170 / 0.95);
+    }
+    .cell-input:focus {
+      outline: none;
+      box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 2px rgb(253 186 116 / 0.85);
+    }
+    .dash-pill-btn {
+      cursor: pointer;
+      border-radius: 0.375rem;
+      border: 1px solid transparent;
+      background-color: rgb(255 237 213 / 0.4);
+      color: rgb(67 20 7);
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .dash-pill-btn:hover {
+      border-color: rgb(154 52 18);
+      background-color: rgb(154 52 18);
+      color: rgb(255 255 255);
+    }
+    .dash-pill-btn:active {
+      background-color: rgb(124 45 18);
+    }
+    .dash-pill-btn-facility {
+      cursor: pointer;
+      border-radius: 0.375rem;
+      border: 1px solid transparent;
+      background-color: transparent;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .dash-pill-btn-facility:hover {
+      border-color: rgb(30 64 175);
+      background-color: rgb(30 64 175);
+      color: rgb(255 255 255);
+    }
+    .dash-pill-btn-facility:active {
+      background-color: rgb(29 78 216);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-sheet-base text-slate-800 antialiased">
+  <div class="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+    <!-- ヘッダー -->
+    <header class="mb-8 rounded-2xl border border-orange-200/80 bg-white/60 px-5 py-5 shadow-sm backdrop-blur-sm sm:px-8 sm:py-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div class="flex flex-wrap items-baseline gap-3">
+            <label class="inline-flex items-center gap-2">
+              <span class="sr-only">年度</span>
+              <select
+                id="fiscal-year"
+                class="cursor-pointer rounded-lg border-2 border-orange-300 bg-white px-3 py-2 text-lg font-bold text-orange-900 shadow-sm transition hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                onchange="onFiscalYearChange(this.value)"
+              >
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
+            </label>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              年度スケジュール作成及び進捗管理表
+            </h1>
+          </div>
+          <p class="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50/80 px-3 py-1 text-sm text-orange-900/90">
+            <span class="font-medium text-orange-800">会計年度</span>
+            <span class="text-orange-700">4/1 〜 翌年3/31</span>
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <!-- [事業所単位] -->
+    <section class="mb-12 scroll-mt-4" aria-labelledby="office-heading">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="office-heading" class="text-lg font-bold text-slate-900 sm:text-xl">
+          [事業所単位] 進捗確認表
+        </h2>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border-2 border-red-500 bg-white px-4 py-2 text-sm font-semibold text-red-500 shadow-sm transition hover:bg-red-500 hover:text-white hover:shadow-md active:scale-[0.98]"
+          onclick="openScheduleCreate('事業所単位')"
+        >
+          スケジュール作成
+        </button>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-orange-200 bg-white/40 shadow-sm">
+        <table class="dash-table min-w-[960px] w-full text-left text-sm">
+          <thead>
+            <tr class="bg-sheet-header text-slate-900">
+              <th rowspan="2" class="w-28 min-w-[7rem] px-2 py-2 text-center text-xs font-semibold leading-tight">大分類</th>
+              <th rowspan="2" class="min-w-[10rem] px-2 py-2 text-center text-xs font-semibold">委員会・研修・訓練名</th>
+              <th rowspan="2" class="min-w-[14rem] px-2 py-2 text-center text-xs font-semibold">内容</th>
+              <th rowspan="2" class="w-24 min-w-[6rem] px-2 py-2 text-center text-xs font-semibold">頻度</th>
+              <th colspan="2" class="px-1 py-2 text-center text-xs font-semibold bg-sheet-headerDeep/60">予定日① / 実施日①</th>
+              <th colspan="2" class="px-1 py-2 text-center text-xs font-semibold bg-sheet-header/90">予定日② / 実施日②</th>
+              <th colspan="2" class="px-1 py-2 text-center text-xs font-semibold bg-sheet-headerDeep/60">予定日③ / 実施日③</th>
+            </tr>
+            <tr class="bg-sheet-header text-[11px] font-medium text-slate-800">
+              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs sm:text-sm">
+            <!-- 虐待防止対策 -->
+            <tr class="bg-white">
+              <td rowspan="3" class="align-middle bg-orange-100/80 p-1">
+                <button
+                  type="button"
+                  class="dash-pill-btn flex h-full min-h-[7.5rem] w-full items-center justify-center rounded-md px-2 py-3 text-center text-xs font-semibold leading-snug text-orange-950 transition-colors"
+                  onclick="openSettingsPage('虐待防止対策')"
+                >
+                  虐待防止対策
+                </button>
+              </td>
+              <td class="bg-orange-50/50 p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('虐待防止委員会')">虐待防止委員会</button>
+              </td>
+              <td class="bg-white px-2 py-2 text-slate-700">計画に基づく開催、議事録の保管・周知</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年2回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止委員会 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止委員会 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止委員会 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止委員会 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止委員会 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止委員会 実施日③" /></td>
+            </tr>
+            <tr class="bg-orange-50/20">
+              <td class="p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('虐待防止研修')">虐待防止研修</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">全職員を対象とした研修の実施</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止研修 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止研修 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止研修 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止研修 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="虐待防止研修 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="虐待防止研修 実施日③" /></td>
+            </tr>
+            <tr class="bg-white">
+              <td class="bg-orange-50/50 p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('身体拘束適正化研修')">身体拘束適正化研修</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">適正化に関する計画・記録の整備</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="身体拘束適正化研修 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="身体拘束適正化研修 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="身体拘束適正化研修 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="身体拘束適正化研修 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="身体拘束適正化研修 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="身体拘束適正化研修 実施日③" /></td>
+            </tr>
+
+            <!-- 感染症対策 -->
+            <tr class="bg-orange-50/20">
+              <td rowspan="3" class="align-middle bg-orange-100/80 p-1">
+                <button
+                  type="button"
+                  class="dash-pill-btn flex h-full min-h-[7.5rem] w-full items-center justify-center rounded-md px-2 py-3 text-center text-xs font-semibold leading-snug text-orange-950 transition-colors"
+                  onclick="openSettingsPage('感染症対策')"
+                >
+                  感染症対策
+                </button>
+              </td>
+              <td class="p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('感染対策委員会')">感染対策委員会</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">感染対策の計画・評価、記録の保管</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年2回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染対策委員会 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染対策委員会 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染対策委員会 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染対策委員会 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染対策委員会 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染対策委員会 実施日③" /></td>
+            </tr>
+            <tr class="bg-white">
+              <td class="bg-orange-50/50 p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('感染症食中毒対策研修・訓練')">感染症食中毒対策研修・訓練</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">手洗い・消毒・廃棄等の周知と訓練</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症食中毒対策研修・訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症食中毒対策研修・訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症食中毒対策研修・訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症食中毒対策研修・訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症食中毒対策研修・訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症食中毒対策研修・訓練 実施日③" /></td>
+            </tr>
+            <tr class="bg-orange-50/20">
+              <td class="p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('感染症BCP研修・訓練')">感染症BCP研修・訓練</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">パンデミック等を想定した訓練</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症BCP研修・訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症BCP研修・訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症BCP研修・訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症BCP研修・訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="感染症BCP研修・訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="感染症BCP研修・訓練 実施日③" /></td>
+            </tr>
+
+            <!-- 防災対策 -->
+            <tr class="bg-white">
+              <td rowspan="4" class="align-middle bg-orange-100/80 p-1">
+                <button
+                  type="button"
+                  class="dash-pill-btn flex h-full min-h-[10rem] w-full items-center justify-center rounded-md px-2 py-3 text-center text-xs font-semibold leading-snug text-orange-950 transition-colors"
+                  onclick="openSettingsPage('防災対策')"
+                >
+                  防災対策
+                </button>
+              </td>
+              <td class="bg-orange-50/50 p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('自然災害BCP研修・訓練')">自然災害BCP研修・訓練</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">災害発生時の初動・連絡体制の確認</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="自然災害BCP研修・訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="自然災害BCP研修・訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="自然災害BCP研修・訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="自然災害BCP研修・訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="自然災害BCP研修・訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="自然災害BCP研修・訓練 実施日③" /></td>
+            </tr>
+            <tr class="bg-orange-50/20">
+              <td class="p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('非常災害対策の訓練（避難訓練）')">非常災害対策の訓練（避難訓練）</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">避難経路・役割分担の確認</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="非常災害対策の訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="非常災害対策の訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="非常災害対策の訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="非常災害対策の訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="非常災害対策の訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="非常災害対策の訓練 実施日③" /></td>
+            </tr>
+            <tr class="bg-white">
+              <td class="bg-orange-50/50 p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('消防訓練')">消防訓練</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">消火器・通報・避難誘導の訓練</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年2回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="消防訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="消防訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="消防訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="消防訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="消防訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="消防訓練 実施日③" /></td>
+            </tr>
+            <tr class="bg-orange-50/20">
+              <td class="p-0">
+                <button type="button" class="dash-pill-btn w-full px-2 py-2 text-left font-medium" onclick="openSettingsPage('避難確保計画に基づく訓練')">避難確保計画に基づく訓練</button>
+              </td>
+              <td class="px-2 py-2 text-slate-700">計画に沿った訓練の実施・記録</td>
+              <td class="bg-sheet-grid px-2 py-2 text-center text-slate-600">年1回以上</td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="避難確保計画に基づく訓練 予定日①" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="避難確保計画に基づく訓練 実施日①" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="避難確保計画に基づく訓練 予定日②" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="避難確保計画に基づく訓練 実施日②" /></td>
+              <td class="bg-orange-50/40 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="避難確保計画に基づく訓練 予定日③" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="避難確保計画に基づく訓練 実施日③" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- [施設単位] -->
+    <section class="mb-8 scroll-mt-4" aria-labelledby="facility-heading">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="facility-heading" class="text-lg font-bold text-slate-900 sm:text-xl">
+          [施設単位] 進捗確認表
+        </h2>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border-2 border-red-500 bg-white px-4 py-2 text-sm font-semibold text-red-500 shadow-sm transition hover:bg-red-500 hover:text-white hover:shadow-md active:scale-[0.98]"
+          onclick="openScheduleCreate('施設単位')"
+        >
+          スケジュール作成
+        </button>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-orange-200 bg-white/40 shadow-sm">
+        <table class="dash-table min-w-[1100px] w-full text-left text-sm">
+          <thead>
+            <tr class="bg-sheet-header text-slate-900">
+              <th rowspan="2" class="min-w-[8rem] px-2 py-2 text-center text-xs font-semibold">施設名</th>
+              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight bg-blue-100/80">自然災害BCP<br />研修・訓練</th>
+              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight bg-orange-100/90">非常災害対策の訓練</th>
+              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold bg-blue-100/80">消防訓練①</th>
+              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold bg-orange-100/90">消防訓練②</th>
+              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight bg-blue-100/80">避難確保計画に<br />基づく訓練</th>
+              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold bg-orange-100/90">消防設備点検</th>
+            </tr>
+            <tr class="text-[11px] font-medium text-slate-800">
+              <th class="bg-sheet-facility px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-facilityAlt/70 px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-orange-50 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-sheet-facility px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-facilityAlt/70 px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-orange-50 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-sheet-facility px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-facilityAlt/70 px-1 py-1.5 text-center">実施日</th>
+              <th class="bg-orange-50 px-1 py-1.5 text-center">予定日</th>
+              <th class="bg-sheet-grid px-1 py-1.5 text-center">実施日</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            <tr>
+              <td class="bg-blue-50 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('みおつくし')">みおつくし</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="例: R8.4.10" aria-label="みおつくし 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="みおつくし 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="みおつくし 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="みおつくし 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="みおつくし 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="みおつくし 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="みおつくし 消防設備 実施" /></td>
+            </tr>
+            <tr>
+              <td class="bg-blue-100/40 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('さわらび')">さわらび</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="さわらび 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="さわらび 消防設備 実施" /></td>
+            </tr>
+            <tr>
+              <td class="bg-blue-50 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('あおい')">あおい</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="あおい 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="あおい 消防設備 実施" /></td>
+            </tr>
+            <tr>
+              <td class="bg-blue-100/40 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('わかな')">わかな</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="わかな 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="わかな 消防設備 実施" /></td>
+            </tr>
+            <tr>
+              <td class="bg-blue-50 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('こうじょう')">こうじょう</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="こうじょう 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="こうじょう 消防設備 実施" /></td>
+            </tr>
+            <tr>
+              <td class="bg-blue-100/40 p-0">
+                <button type="button" class="dash-pill-btn-facility w-full px-3 py-2.5 text-left font-semibold text-slate-900" onclick="openSettingsPage('はつね')">はつね</button>
+              </td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="例: R30.12.31" aria-label="はつね 自然災害BCP 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 自然災害BCP 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="はつね 非常災害 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 非常災害 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="はつね 消防① 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 消防① 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="はつね 消防② 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 消防② 実施" /></td>
+              <td class="bg-sheet-facility p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="はつね 避難確保 予定" /></td>
+              <td class="bg-sheet-facilityAlt/60 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 避難確保 実施" /></td>
+              <td class="bg-orange-50/50 p-0"><input class="cell-input" type="text" placeholder="予定" aria-label="はつね 消防設備 予定" /></td>
+              <td class="bg-sheet-grid/80 p-0"><input class="cell-input" type="text" placeholder="実施" aria-label="はつね 消防設備 実施" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="border-t border-orange-200/80 pt-6 text-center text-xs text-slate-500">
+      進捗管理表（UI プレビュー）・ブラウザの開発者ツールで操作ログを確認できます。
+    </footer>
+  </div>
+
+  <script>
+    /**
+     * 将来の画面遷移用プレースホルダー
+     * @param {string} label - 設定対象の表示名
+     */
+    function openSettingsPage(label) {
+      console.log(label + 'の設定ページへ移動');
+    }
+
+    /**
+     * スケジュール作成フロー開始（プレースホルダー）
+     * @param {string} scopeLabel - 事業所単位 / 施設単位 など
+     */
+    function openScheduleCreate(scopeLabel) {
+      console.log(scopeLabel + 'のスケジュール作成の設定ページへ移動');
+    }
+
+    /**
+     * 年度プルダウン変更時（プレースホルダー）
+     * @param {string} year
+     */
+    function onFiscalYearChange(year) {
+      console.log(year + '年度の設定ページへ移動');
+    }
+  </script>
+</body>
+</html>
