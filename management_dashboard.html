@@ -21,9 +21,6 @@
           fontFamily: {
             sans: ['"Meiryo UI"', 'Meiryo', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', 'sans-serif'],
           },
-          spacing: {
-            '2': '0.5rem',
-          },
         },
       },
     };
@@ -37,26 +34,23 @@
     }
     .date-cell {
       display: block;
-      min-height: 2rem;
-      min-width: 4.5rem;
-      padding: 0.5rem 0.375rem;
-      font-size: 0.75rem;
-      line-height: 1.25rem;
+      min-height: 1.75rem;
+      min-width: 4.25rem;
+      padding: 0.25rem 0.25rem;
+      font-size: 0.6875rem;
+      line-height: 1.125rem;
       text-align: center;
       cursor: default;
       border-radius: 0.125rem;
       transition: background-color 0.15s ease, color 0.15s ease;
     }
-    .date-cell--empty {
-      color: rgb(168 162 158);
-    }
     .date-cell--focusable:focus {
       outline: 2px solid rgb(253 186 116);
-      outline-offset: 1px;
+      outline-offset: 0;
     }
     .dash-pill-btn {
       cursor: pointer;
-      border-radius: 0.25rem;
+      border-radius: 0.125rem;
       border: 1px solid transparent;
       background-color: transparent;
       color: rgb(28 25 23);
@@ -82,17 +76,17 @@
   </style>
 </head>
 <body class="min-h-screen bg-white text-stone-900 antialiased">
-  <div class="mx-auto max-w-[1680px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-    <!-- ヘッダー（CSV 1–4 行相当・8pt グリッド: p-2 / gap-2） -->
-    <header class="mb-6 rounded-lg border border-stone-200 bg-white px-4 py-4 shadow-sm sm:px-6 sm:py-5">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 flex-1 space-y-2">
+  <div class="mx-auto max-w-[1680px] px-3 py-3 sm:px-4 sm:py-4">
+    <!-- ヘッダー（8pt グリッド: gap-2 / コンパクト余白） -->
+    <header class="mb-4 rounded border border-stone-200 bg-white px-3 py-2 shadow-sm sm:px-4 sm:py-3">
+      <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 flex-1 space-y-1">
           <div class="flex flex-wrap items-baseline gap-2">
-            <label class="inline-flex items-center gap-2">
+            <label class="inline-flex items-center gap-1">
               <span class="sr-only">年度</span>
               <select
                 id="fiscal-year"
-                class="h-9 cursor-pointer rounded border border-stone-300 bg-white px-2 py-1 text-base font-bold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                class="h-8 cursor-pointer rounded border border-stone-300 bg-white px-2 py-0.5 text-sm font-bold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
                 onchange="onFiscalYearChange(this.value)"
               >
                 <option value="2024">2024</option>
@@ -101,125 +95,125 @@
                 <option value="2027">2027</option>
               </select>
             </label>
-            <h1 class="text-lg font-bold tracking-tight sm:text-xl">年度スケジュール作成及び進捗管理表</h1>
+            <h1 class="text-base font-bold tracking-tight sm:text-lg">年度スケジュール作成及び進捗管理表</h1>
           </div>
-          <p class="text-sm text-stone-600">
+          <p class="text-xs leading-snug text-stone-600 sm:text-sm">
             <span class="font-medium">事業所名：</span>ワークショップひとふし
-            <span class="mx-3 hidden sm:inline text-stone-300">|</span>
-            <span class="mt-1 block font-medium sm:mt-0 sm:inline"><span class="font-medium">サービス種別：</span>就労継続支援B型事業所</span>
+            <span class="mx-2 hidden text-stone-300 sm:inline">|</span>
+            <span class="mt-0.5 block sm:mt-0 sm:inline"><span class="font-medium">サービス種別：</span>就労継続支援B型事業所</span>
           </p>
         </div>
-        <div class="flex shrink-0 flex-col items-start gap-2 text-right sm:items-end">
-          <p class="text-sm text-stone-600">令和7年4月1日～令和8年3月31日</p>
-          <p class="text-sm font-medium text-red-600" id="today-line">2026/4/14 ○○の日</p>
-          <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
-            <label class="flex items-center gap-2 text-xs text-stone-500">
-              <span>表示</span>
-              <select id="view-mode" class="rounded border border-stone-300 bg-white px-2 py-1 text-xs" onchange="setViewMode(this.value)">
-                <option value="initial">初期（Gemini_01）</option>
-                <option value="progress">進捗例（Gemini_02）</option>
-              </select>
-            </label>
-            <label class="flex items-center gap-2 text-xs text-stone-500">
-              <span>施設数（デモ）</span>
-              <select id="facility-count" class="rounded border border-stone-300 bg-white px-2 py-1 text-xs" onchange="onFacilityCountChange(Number(this.value))">
-                <option value="1">1</option>
-                <option value="6" selected>6</option>
-              </select>
-            </label>
-          </div>
+        <div class="flex shrink-0 flex-col items-start gap-1 text-right text-xs leading-tight sm:items-end sm:text-sm">
+          <span id="fiscal-range-display" class="text-stone-600">令和7年4月1日～令和8年3月31日</span>
+          <span id="today-highlight-display" class="font-medium text-red-600">2026/4/14 ○○の日</span>
+          <!-- カレンダー連携後: 進捗サマリー等の表示用（初期は Gemini_01 相当で空） -->
+          <span id="status-display" class="block min-h-0 text-[11px] text-stone-500 sm:text-xs" aria-live="polite"></span>
+          <!-- カレンダー連携後: 施設登録コンテキスト等（初期は Gemini_01 相当で空） -->
+          <span id="facility-context-display" class="block min-h-0 text-[11px] text-stone-500 sm:text-xs" aria-live="polite"></span>
         </div>
       </div>
     </header>
 
     <!-- 【事業所単位】 -->
-    <section class="mb-10 scroll-mt-4" aria-labelledby="office-heading">
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="office-heading" class="text-base font-bold text-stone-900 sm:text-lg">【事業所単位】進捗確認表</h2>
+    <section class="mb-5 scroll-mt-4" aria-labelledby="office-heading">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 id="office-heading" class="text-sm font-bold text-stone-900 sm:text-base">【事業所単位】進捗確認表</h2>
         <button
           type="button"
-          class="inline-flex h-9 min-w-[9rem] items-center justify-center rounded px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99]"
+          class="inline-flex h-8 min-w-[8.5rem] items-center justify-center rounded px-3 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99] sm:text-sm"
           style="background-color: #C65911"
           onclick="openScheduleCreate('事業所単位')"
         >
           スケジュール作成
         </button>
       </div>
-      <div class="overflow-x-auto rounded-lg border border-stone-200 bg-white shadow-sm">
-        <table class="dash-table group-gap-after min-w-[920px] w-full text-left text-sm" id="office-table">
+      <div class="overflow-x-auto rounded border border-stone-200 bg-white shadow-sm">
+        <table class="dash-table group-gap-after min-w-[880px] w-full text-left text-sm" id="office-table">
           <thead>
             <tr class="bg-sheet-peach text-stone-900">
-              <th class="min-w-[11rem] px-2 py-2 text-center text-xs font-semibold">委員会・研修・訓練名</th>
-              <th class="min-w-[14rem] px-2 py-2 text-center text-xs font-semibold">内容</th>
-              <th class="w-28 min-w-[7rem] px-2 py-2 text-center text-xs font-semibold">頻度</th>
-              <th class="w-24 min-w-[5.5rem] bg-orange-50/80 px-1 py-2 text-center text-[11px] font-semibold">予定日①</th>
-              <th class="w-24 min-w-[5.5rem] bg-sheet-rowAlt px-1 py-2 text-center text-[11px] font-semibold">実施日①</th>
-              <th class="w-24 min-w-[5.5rem] bg-orange-50/80 px-1 py-2 text-center text-[11px] font-semibold">予定日②</th>
-              <th class="w-24 min-w-[5.5rem] bg-sheet-rowAlt px-1 py-2 text-center text-[11px] font-semibold">実施日②</th>
-              <th class="w-24 min-w-[5.5rem] bg-orange-50/80 px-1 py-2 text-center text-[11px] font-semibold">予定日③</th>
-              <th class="w-24 min-w-[5.5rem] bg-sheet-rowAlt px-1 py-2 text-center text-[11px] font-semibold">実施日③</th>
+              <th class="min-w-[10.5rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">委員会・研修・訓練名</th>
+              <th class="min-w-[13rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">内容</th>
+              <th class="w-24 min-w-[5.5rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">頻度</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-orange-50/80 px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">予定日①</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-sheet-rowAlt px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">実施日①</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-orange-50/80 px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">予定日②</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-sheet-rowAlt px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">実施日②</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-orange-50/80 px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">予定日③</th>
+              <th class="w-[4.5rem] min-w-[4.25rem] bg-sheet-rowAlt px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">実施日③</th>
             </tr>
           </thead>
-          <tbody id="office-tbody" class="text-xs sm:text-sm"></tbody>
+          <tbody id="office-tbody" class="text-[11px] sm:text-xs"></tbody>
         </table>
       </div>
     </section>
 
     <!-- 【施設単位】 -->
-    <section class="mb-8 scroll-mt-4" aria-labelledby="facility-heading">
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="facility-heading" class="text-base font-bold text-stone-900 sm:text-lg">【施設単位】進捗確認表（防災関連）</h2>
+    <section class="mb-4 scroll-mt-4" aria-labelledby="facility-heading">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 id="facility-heading" class="text-sm font-bold text-stone-900 sm:text-base">【施設単位】進捗確認表（防災関連）</h2>
         <button
           type="button"
-          class="inline-flex h-9 min-w-[9rem] items-center justify-center rounded px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99]"
+          class="inline-flex h-8 min-w-[8.5rem] items-center justify-center rounded px-3 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99] sm:text-sm"
           style="background-color: #C65911"
           onclick="openScheduleCreate('施設単位')"
         >
           スケジュール作成
         </button>
       </div>
-      <div class="overflow-x-auto rounded-lg border border-stone-200 bg-white shadow-sm">
-        <table class="dash-table min-w-[1100px] w-full text-left text-sm" id="facility-table">
+      <div class="overflow-x-auto rounded border border-stone-200 bg-white shadow-sm">
+        <table class="dash-table min-w-[1040px] w-full text-left text-sm" id="facility-table">
           <thead>
             <tr class="bg-sheet-peach text-stone-900">
-              <th rowspan="2" class="min-w-[8rem] px-2 py-2 text-center text-xs font-semibold">施設名</th>
-              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight">自然災害BCP<br />研修・訓練</th>
-              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight">非常災害対策の訓練</th>
-              <th colspan="2" class="min-w-[7rem] px-1 py-2 text-center text-[11px] font-semibold leading-tight">避難確保計画に<br />基づく訓練</th>
-              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold">消防訓練①</th>
-              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold">消防訓練②</th>
-              <th colspan="2" class="min-w-[6rem] px-1 py-2 text-center text-[11px] font-semibold">消防設備点検</th>
+              <th rowspan="2" class="min-w-[6.5rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">施設名</th>
+              <th colspan="2" class="min-w-[6.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">自然災害BCP<br />研修・訓練</th>
+              <th colspan="2" class="min-w-[6.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">非常災害対策の訓練</th>
+              <th colspan="2" class="min-w-[6.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">避難確保計画に<br />基づく訓練</th>
+              <th colspan="2" class="min-w-[5.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold">消防訓練①</th>
+              <th colspan="2" class="min-w-[5.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold">消防訓練②</th>
+              <th colspan="2" class="min-w-[5.5rem] px-0.5 py-1.5 text-center text-[10px] font-semibold">消防設備点検</th>
             </tr>
-            <tr class="bg-sheet-peachDeep/50 text-[11px] font-medium text-stone-800">
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
-              <th class="bg-orange-50/90 px-1 py-1.5 text-center">予定日</th>
-              <th class="bg-sheet-rowAlt px-1 py-1.5 text-center">実施日</th>
+            <tr class="bg-sheet-peachDeep/50 text-[10px] font-medium text-stone-800">
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
+              <th class="bg-orange-50/90 px-0.5 py-1 text-center">予定日</th>
+              <th class="bg-sheet-rowAlt px-0.5 py-1 text-center">実施日</th>
             </tr>
           </thead>
-          <tbody id="facility-tbody" class="text-xs"></tbody>
+          <tbody id="facility-tbody" class="text-[11px]"></tbody>
         </table>
       </div>
-      <p id="facility-disabled-hint" class="mt-2 hidden text-xs text-stone-500">施設登録が1件のときは、施設単位の表は無効（CSV注記）です。</p>
     </section>
 
-    <footer class="border-t border-stone-200 pt-4 text-center text-xs text-stone-500">
-      予定日・実施日は表示専用（カレンダー連携予定）。開発者ツールで操作ログを確認できます。
+    <footer class="border-t border-stone-200 pt-2 text-center text-[10px] text-stone-500 sm:text-xs">
+      予定日・実施日は表示専用（カレンダー連携予定）。
     </footer>
   </div>
 
   <script>
-    /** 施設登録数（デモ用）。1 のとき施設表は無効、2 以上で事業所側の防災4行は無効（CSV 注記） */
-    let facilityCountState = 6;
-    let viewModeState = 'initial';
+    /**
+     * 設定由来の施設登録件数（UI なし。将来は API／設定から注入）
+     * Gemini_01: 複数施設 → 事業所表の防災4行は無効、施設表は有効
+     */
+    const FACILITY_REGISTRATION_COUNT = 6;
+
+    /** 日付セル: カレンダー連携後に class / data-cell-status を更新するための Tailwind クラス群 */
+    const DATE_CELL_STATUS_CLASSES = {
+      neutral: 'bg-white text-stone-800',
+      empty: 'bg-stone-50/90 text-stone-400',
+      scheduled: 'bg-amber-50 text-stone-900',
+      done: 'bg-green-50 text-stone-900 font-medium',
+      overdue: 'bg-red-50 text-red-600 font-bold',
+      warning: 'bg-red-50/80 text-red-700 font-semibold',
+      dashNeutral: 'bg-green-50/80 text-stone-500',
+    };
 
     const OFFICE_ROWS_META = [
       { id: 'abuse-committee', name: '虐待防止委員会', content: '計画に基づく開催、議事録の保管・周知', freq: '年1回以上', group: 'abuse', facilityOnly: false },
@@ -234,6 +228,7 @@
       { id: 'evac-plan', name: '避難確保計画に基づく訓練', content: '計画に沿った訓練の実施・記録', freq: '不要', group: 'bousai', lastInGroup: true, facilityOnly: true },
     ];
 
+    /** Gemini_01 初期データ（予定・実施の値のみ。見た目は neutral / empty） */
     const OFFICE_DATES_INITIAL = {
       'abuse-committee': { p1: 'R8.4.10', s1: '', p2: '', s2: '', p3: '', s3: '' },
       'abuse-training': { p1: '', s1: '', p2: '', s2: '', p3: '', s3: '' },
@@ -247,34 +242,7 @@
       'evac-plan': { p1: '', s1: '', p2: '', s2: '', p3: '', s3: '' },
     };
 
-    /** Gemini_02 相当：行・セルごとの表示スタイル */
-    const OFFICE_DATES_PROGRESS = {
-      'abuse-committee': {
-        p1: 'R8.4.10', s1: 'R8.4.10', p2: '', s2: '', p3: '', s3: '',
-        cellStyle: { p1: 'ok', s1: 'ok' },
-        rowCompleted: true,
-      },
-      'abuse-training': {
-        p1: 'R8.4.10', s1: 'R8.4.10', p2: '', s2: '', p3: '', s3: '',
-        cellStyle: { p1: 'ok', s1: 'ok' },
-        rowCompleted: true,
-      },
-      restraint: { p1: 'R8.5.10', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'infection-committee': { p1: 'R8.7.1', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'infection-food': { p1: 'R8.7.1', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'infection-bcp': { p1: 'R8.8.1', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'natural-bcp': { p1: 'R8.9.1', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'emergency-drill': { p1: '', s1: '', p2: '', s2: '', p3: '', s3: '' },
-      'fire-drill': {
-        p1: 'R8.4.1', s1: '', p2: 'R8.9.1', s2: '', p3: '', s3: '',
-        rowAlert: true,
-        cellStyle: { p1: 'alert', s1: 'alert' },
-      },
-      'evac-plan': { p1: '', s1: '', p2: '', s2: '', p3: '', s3: '' },
-    };
-
     const FACILITY_NAMES = ['みおつくし', 'さわらび', 'あおい', 'わかな', 'こちょう', 'はつね'];
-
     const FACILITY_KEYS = ['n1', 's1', 'n2', 's2', 'n3', 's3', 'f1p', 'f1s', 'f2p', 'f2s', 'eqp', 'eqs'];
 
     const FACILITY_INITIAL = {
@@ -286,94 +254,66 @@
       はつね: {},
     };
 
-    const FACILITY_PROGRESS = {
-      みおつくし: {
-        n1: 'R8.4.8', s1: 'R8.4.8', n2: '-', s2: '-', n3: '', s3: '', f1p: '', f1s: '', f2p: '', f2s: '', eqp: '', eqs: '',
-        cellStyle: { n2: 'dashOk', s2: 'dashOk' },
-      },
-      さわらび: {
-        n1: 'R8.4.8', s1: 'R8.4.8', n2: '-', s2: '-', n3: 'R8.4.10', s3: 'R8.4.10', f1p: 'R8.4.8', f1s: 'R8.4.8', f2p: 'R8.4.10', f2s: 'R8.4.10', eqp: 'R8.4.10', eqs: 'R8.4.10',
-        cellStyle: {
-          n2: 'dashOk', s2: 'dashOk',
-          n1: 'ok', s1: 'ok', n3: 'ok', s3: 'ok', f1p: 'ok', f1s: 'ok', f2p: 'ok', f2s: 'ok', eqp: 'ok', eqs: 'ok',
-        },
-      },
-      あおい: {
-        n1: '', s1: '', n2: '-', s2: '-', n3: 'R8.4.8', s3: '', f1p: '', f1s: '', f2p: '', f2s: '', eqp: '', eqs: '',
-        cellStyle: { n3: 'alert' },
-      },
-      わかな: { n1: '', s1: '', n2: '-', s2: '-', n3: '', s3: '', f1p: '', f1s: '', f2p: '', f2s: '', eqp: '', eqs: '', cellStyle: { n2: 'dashOk', s2: 'dashOk' } },
-      こちょう: { n1: '', s1: '', n2: '-', s2: '-', n3: '', s3: '', f1p: '', f1s: '', f2p: '', f2s: '', eqp: '', eqs: '', cellStyle: { n2: 'dashOk', s2: 'dashOk' } },
-      はつね: { n1: '', s1: '', n2: '-', s2: '-', n3: '', s3: '', f1p: '', f1s: '', f2p: '', f2s: '', eqp: '', eqs: '', cellStyle: { n2: 'dashOk', s2: 'dashOk' } },
-    };
+    function isOfficeFacilityRowDisabled() {
+      return FACILITY_REGISTRATION_COUNT >= 2;
+    }
 
-    function cellClassForStyle(kind) {
-      if (kind === 'ok') return 'bg-green-50 text-stone-900 font-medium';
-      if (kind === 'alert') return 'bg-red-50 text-red-600 font-bold';
-      if (kind === 'dashOk') return 'bg-green-50/90 text-stone-500';
-      return 'bg-white text-stone-800';
+    function isFacilitySectionDisabled() {
+      return FACILITY_REGISTRATION_COUNT === 1;
+    }
+
+    /**
+     * @param {string} value
+     * @param {string} ariaLabel
+     * @param {'neutral'|'empty'|'scheduled'|'done'|'overdue'|'warning'|'dashNeutral'} status
+     * @param {string} slotId カレンダー連携時の DOM 特定用
+     */
+    function renderDateSpan(value, ariaLabel, status, slotId) {
+      const v = (value || '').trim();
+      const display = v === '' ? '—' : v;
+      const isEmpty = v === '';
+      const st = isEmpty ? 'empty' : status || 'neutral';
+      const tailwind = DATE_CELL_STATUS_CLASSES[st] || DATE_CELL_STATUS_CLASSES.neutral;
+      const cls = ['date-cell date-cell--focusable', tailwind].join(' ');
+      return `<span id="${slotId}" class="${cls}" tabindex="0" role="button" aria-label="${ariaLabel}" data-calendar-slot data-cell-status="${st}">${display}</span>`;
     }
 
     function officeRowBg(index) {
       return index % 2 === 0 ? 'bg-white' : 'bg-sheet-rowAlt/80';
     }
 
-    function isOfficeFacilityRowDisabled() {
-      return facilityCountState >= 2;
-    }
-
-    function isFacilitySectionDisabled() {
-      return facilityCountState === 1;
-    }
-
-    function renderDateSpan(value, ariaLabel, styleKind, rowAlert) {
-      const v = (value || '').trim();
-      const display = v === '' ? '—' : v;
-      const empty = v === '';
-      const sk = styleKind || (rowAlert ? 'alert' : null);
-      const cls = [
-        'date-cell date-cell--focusable',
-        empty ? 'date-cell--empty' : '',
-        sk ? cellClassForStyle(sk) : empty ? 'bg-stone-50/80' : 'bg-white',
-      ]
-        .filter(Boolean)
-        .join(' ');
-      return `<span class="${cls}" tabindex="0" role="button" aria-label="${ariaLabel}" data-calendar-slot>${display}</span>`;
-    }
-
     function renderOfficeTable() {
       const tbody = document.getElementById('office-tbody');
-      const datesSource = viewModeState === 'progress' ? OFFICE_DATES_PROGRESS : OFFICE_DATES_INITIAL;
       const frag = document.createDocumentFragment();
 
       OFFICE_ROWS_META.forEach((row, index) => {
         const tr = document.createElement('tr');
+        tr.dataset.rowId = row.id;
+        tr.dataset.rowStatus = 'neutral';
+
         const disabledFacility = row.facilityOnly && isOfficeFacilityRowDisabled();
-        const d = datesSource[row.id] || {};
-        const rowAlert = viewModeState === 'progress' && d.rowAlert;
-        const cs = d.cellStyle || {};
+        const d = OFFICE_DATES_INITIAL[row.id] || {};
 
         if (row.lastInGroup) tr.classList.add('last-in-group');
-        if (rowAlert) tr.classList.add('bg-red-50');
-        else if (d.rowCompleted) tr.classList.add('bg-green-50/70');
-        else tr.classList.add(officeRowBg(index));
+        tr.classList.add(officeRowBg(index));
 
         const nameCell = disabledFacility
-          ? `<button type="button" class="dash-pill-btn w-full px-2 py-2 text-left text-sm" disabled title="施設が2件以上のため事業所表では無効">${row.name}</button>`
-          : `<button type="button" class="dash-pill-btn w-full px-2 py-2 text-left text-sm font-medium" onclick="openSettingsPage('${row.name.replace(/'/g, "\\'")}')">${row.name}</button>`;
+          ? `<button type="button" class="dash-pill-btn w-full px-1.5 py-1.5 text-left text-[11px] sm:text-xs" disabled title="施設が2件以上のため事業所表では無効">${row.name}</button>`
+          : `<button type="button" class="dash-pill-btn w-full px-1.5 py-1.5 text-left text-[11px] font-medium sm:text-xs" onclick="openSettingsPage('${row.name.replace(/'/g, "\\'")}')">${row.name}</button>`;
 
-        const freqCell = `<td class="px-2 py-2 text-center text-stone-600">${row.freq}</td>`;
+        const freqCell = `<td class="px-1.5 py-1 text-center text-stone-600">${row.freq}</td>`;
 
         const cells = ['p1', 's1', 'p2', 's2', 'p3', 's3'].map((key, i) => {
           const val = d[key] ?? '';
-          const kind = cs[key];
           const label = `${row.name} ${key.startsWith('p') ? '予定' : '実施'}${Math.floor(i / 2) + 1}`;
-          return `<td class="p-0 ${disabledFacility ? 'opacity-40' : ''}">${renderDateSpan(val, label, kind, rowAlert)}</td>`;
+          const slotId = `cell-office-${row.id}-${key}`;
+          const status = val ? 'neutral' : 'empty';
+          return `<td class="p-0 ${disabledFacility ? 'opacity-40' : ''}">${renderDateSpan(val, label, status, slotId)}</td>`;
         });
 
         tr.innerHTML = `
           <td class="p-0">${nameCell}</td>
-          <td class="px-2 py-2 text-stone-700">${row.content}</td>
+          <td class="px-1.5 py-1 text-stone-700">${row.content}</td>
           ${freqCell}
           ${cells.join('')}
         `;
@@ -386,28 +326,27 @@
 
     function renderFacilityTable() {
       const tbody = document.getElementById('facility-tbody');
-      const hint = document.getElementById('facility-disabled-hint');
-      const disabled = isFacilitySectionDisabled();
-      hint.classList.toggle('hidden', !disabled);
-
-      const dataMap = viewModeState === 'progress' ? FACILITY_PROGRESS : FACILITY_INITIAL;
       const frag = document.createDocumentFragment();
+      const disabled = isFacilitySectionDisabled();
 
       FACILITY_NAMES.forEach((name, rowIdx) => {
         const tr = document.createElement('tr');
+        tr.dataset.facilityRow = name;
+        tr.dataset.rowStatus = 'neutral';
         tr.className = rowIdx % 2 === 0 ? 'bg-white' : 'bg-sheet-rowAlt/70';
-        const row = dataMap[name] || {};
-        const cs = row.cellStyle || {};
+
+        const row = FACILITY_INITIAL[name] || {};
 
         const nameBtn = disabled
-          ? `<button type="button" class="dash-pill-btn w-full px-3 py-2 text-left font-semibold" disabled>${name}</button>`
-          : `<button type="button" class="dash-pill-btn w-full px-3 py-2 text-left font-semibold" onclick="openSettingsPage('${name}')">${name}</button>`;
+          ? `<button type="button" class="dash-pill-btn w-full px-2 py-1.5 text-left text-[11px] font-semibold sm:text-xs" disabled>${name}</button>`
+          : `<button type="button" class="dash-pill-btn w-full px-2 py-1.5 text-left text-[11px] font-semibold sm:text-xs" onclick="openSettingsPage('${name}')">${name}</button>`;
 
         const tds = FACILITY_KEYS.map((key) => {
           const val = row[key] != null ? row[key] : '';
-          const kind = cs[key];
           const label = `${name} ${key}`;
-          return `<td class="p-0 ${disabled ? 'opacity-40' : ''}">${renderDateSpan(val, label, kind, false)}</td>`;
+          const slotId = `cell-facility-${name}-${key}`;
+          const status = val ? 'neutral' : 'empty';
+          return `<td class="p-0 ${disabled ? 'opacity-40' : ''}">${renderDateSpan(val, label, status, slotId)}</td>`;
         });
 
         tr.innerHTML = `<td class="p-0">${nameBtn}</td>${tds.join('')}`;
@@ -423,16 +362,6 @@
       renderFacilityTable();
     }
 
-    function setViewMode(mode) {
-      viewModeState = mode;
-      refreshDashboard();
-    }
-
-    function onFacilityCountChange(n) {
-      facilityCountState = n;
-      refreshDashboard();
-    }
-
     function openSettingsPage(label) {
       console.log(label + 'の設定ページへ移動');
     }
@@ -446,16 +375,33 @@
     }
 
     /**
-     * 将来: Google カレンダー API からイベントを取得して画面データに反映する予定のフック
+     * セルの表示状態を更新（カレンダー連携後に利用）
+     * @param {HTMLElement} el data-calendar-slot 要素
+     * @param {'neutral'|'empty'|'scheduled'|'done'|'overdue'|'warning'|'dashNeutral'} status
+     * @param {string} [text] 省略時は現状維持
+     */
+    function setDateCellStatus(el, status, text) {
+      if (!el || !el.hasAttribute('data-calendar-slot')) return;
+      const st = DATE_CELL_STATUS_CLASSES[status] ? status : 'neutral';
+      const raw = text !== undefined ? String(text).trim() : el.textContent.trim();
+      const isEmpty = raw === '' || raw === '—';
+      const effective = isEmpty ? 'empty' : st;
+      const tailwind = DATE_CELL_STATUS_CLASSES[effective] || DATE_CELL_STATUS_CLASSES.neutral;
+      el.dataset.cellStatus = effective;
+      el.className = ['date-cell date-cell--focusable', tailwind].join(' ');
+      el.textContent = isEmpty ? '—' : raw;
+    }
+
+    /**
+     * 将来: Google カレンダー API からイベントを取得
      * @param {{ officeId?: string, facilityId?: string, rangeStart?: string, rangeEnd?: string }} _params
-     * @returns {Promise<unknown>}
      */
     async function fetchCalendarEventsForSchedule(_params) {
       return Promise.resolve(null);
     }
 
     /**
-     * 将来: 取得したカレンダーイベントを予定日・実施日セルに流し込む（DOM または状態管理と連携）
+     * 将来: 取得データをセル・右上プレースホルダーへ反映（中身は未実装）
      * @param {unknown} _payload
      */
     function applyCalendarDataToDateCells(_payload) {}
