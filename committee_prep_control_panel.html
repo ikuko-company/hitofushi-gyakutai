@@ -91,7 +91,7 @@
           Step 1 — 委員会メンバー選出
         </h2>
         <p class="mb-4 text-sm text-stone-600">
-          氏名は登録職員データからドロップダウンで選択（自動取得）。外部委員は自由入力。
+          氏名は登録職員データからドロップダウンで選択すると、職種・肩書が自動表示されます。外部委員の氏名は自由入力（肩書は登録マスタに照合して自動表示、未登録時は案内文を表示）。
         </p>
         <div class="overflow-x-auto rounded border border-gray-200 bg-white">
           <table class="w-full min-w-[520px] border-collapse text-sm">
@@ -115,8 +115,11 @@
                   <input
                     id="field-step1-chair-title"
                     type="text"
-                    class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                    placeholder="例: 施設長"
+                    readonly
+                    tabindex="-1"
+                    aria-readonly="true"
+                    class="w-full cursor-default rounded border border-gray-200 bg-panel-surface px-2 py-2 text-sm text-stone-700"
+                    value=""
                   />
                 </td>
               </tr>
@@ -132,8 +135,11 @@
                   <input
                     id="field-step1-manager-title"
                     type="text"
-                    class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                    placeholder="例: ソーシャルワーカー"
+                    readonly
+                    tabindex="-1"
+                    aria-readonly="true"
+                    class="w-full cursor-default rounded border border-gray-200 bg-panel-surface px-2 py-2 text-sm text-stone-700"
+                    value=""
                   />
                 </td>
               </tr>
@@ -150,27 +156,16 @@
           </button>
         </div>
         <div class="mt-6 rounded border border-panel-border bg-panel-surface p-4">
-          <h3 class="mb-2 text-sm font-semibold text-stone-800">外部委員</h3>
-          <div class="flex flex-col gap-4">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-4">
-              <div class="min-w-0 flex-1">
-                <label class="mb-2 block text-xs text-stone-500" for="field-step1-external-1-name">氏名（自由入力）</label>
-                <input
-                  id="field-step1-external-1-name"
-                  type="text"
-                  class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                />
-              </div>
-              <div class="min-w-0 flex-1">
-                <label class="mb-2 block text-xs text-stone-500" for="field-step1-external-1-title">職種・肩書</label>
-                <input
-                  id="field-step1-external-1-title"
-                  type="text"
-                  class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                  placeholder="例: 会計士"
-                />
-              </div>
-            </div>
+          <h3 class="mb-4 text-sm font-semibold text-stone-800">外部委員</h3>
+          <div id="step1-external-rows" class="flex flex-col gap-4"></div>
+          <div class="mt-4 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              id="btn-step1-add-external-row"
+              class="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+            >
+              行を追加する（＋）
+            </button>
           </div>
         </div>
       </section>
@@ -426,12 +421,19 @@
 
   <script>
     (function () {
-      const STAFF_OPTIONS = [
-        { value: '', label: '選択してください' },
-        { value: 'staff-001', label: '山田 太郎' },
-        { value: 'staff-002', label: '佐藤 花子' },
-        { value: 'staff-003', label: '鈴木 一郎' },
+      /** 登録職員マスタ（value 選択時に職種・肩書を自動表示） */
+      const STAFF_MASTER = [
+        { value: '', label: '選択してください', title: '' },
+        { value: 'staff-001', label: '山田 太郎', title: '施設長' },
+        { value: 'staff-002', label: '佐藤 花子', title: 'ソーシャルワーカー' },
+        { value: 'staff-003', label: '鈴木 一郎', title: 'サービス管理責任者' },
       ];
+
+      /** 外部委員名の正規化キー → 肩書（自由入力氏名の照合用デモデータ） */
+      const EXTERNAL_TITLE_BY_KEY = {
+        沢登武: '弁護士（顧問）',
+        吉沢恵子: '公認会計士',
+      };
 
       let currentStepIndex = 0;
       const stepOrder = ['1', '2', '3', '4', '5', 'confirm'];
@@ -449,9 +451,23 @@
         return y + '-' + padIdSegment(m + 1) + '-' + padIdSegment(d);
       }
 
+      function normalizePersonNameKey(name) {
+        return String(name || '')
+          .replace(/氏$/u, '')
+          .replace(/[\s　]+/g, '')
+          .toLowerCase();
+      }
+
+      function staffTitleByValue(value) {
+        const row = STAFF_MASTER.find(function (o) {
+          return o.value === value;
+        });
+        return row ? row.title : '';
+      }
+
       function fillSelect(selectEl) {
         selectEl.innerHTML = '';
-        STAFF_OPTIONS.forEach(function (opt) {
+        STAFF_MASTER.forEach(function (opt) {
           const o = document.createElement('option');
           o.value = opt.value;
           o.textContent = opt.label;
@@ -459,11 +475,55 @@
         });
       }
 
+      function syncTitleFromStaffSelect(selectEl, titleInputEl) {
+        if (!selectEl || !titleInputEl) return;
+        titleInputEl.value = staffTitleByValue(selectEl.value);
+      }
+
+      function bindStaffSelectToTitle(selectEl, titleInputId) {
+        const titleEl = document.getElementById(titleInputId);
+        if (!titleEl) return;
+        const handler = function () {
+          syncTitleFromStaffSelect(selectEl, titleEl);
+        };
+        selectEl.addEventListener('change', handler);
+        handler();
+      }
+
+      function resolveExternalTitleDisplay(nameRaw) {
+        const key = normalizePersonNameKey(nameRaw);
+        if (!key) return '';
+        if (Object.prototype.hasOwnProperty.call(EXTERNAL_TITLE_BY_KEY, key)) {
+          return EXTERNAL_TITLE_BY_KEY[key];
+        }
+        return '（登録マスタに該当する肩書がありません）';
+      }
+
+      function syncExternalRowTitle(nameInputEl) {
+        const row = nameInputEl.closest('.step1-external-row');
+        if (!row) return;
+        const titleEl = row.querySelector('[data-external-title-display]');
+        if (!titleEl) return;
+        const raw = nameInputEl.value.trim();
+        titleEl.value = raw ? resolveExternalTitleDisplay(raw) : '';
+      }
+
+      function bindExternalNameInput(nameInputEl) {
+        const handler = function () {
+          syncExternalRowTitle(nameInputEl);
+        };
+        nameInputEl.addEventListener('input', handler);
+        nameInputEl.addEventListener('blur', handler);
+        handler();
+      }
+
       function initStaffDropdowns() {
         fillSelect(document.getElementById('field-step1-chair-name'));
         fillSelect(document.getElementById('field-step1-manager-name'));
         document.getElementById('field-step1-chair-name').value = 'staff-001';
         document.getElementById('field-step1-manager-name').value = 'staff-002';
+        bindStaffSelectToTitle(document.getElementById('field-step1-chair-name'), 'field-step1-chair-title');
+        bindStaffSelectToTitle(document.getElementById('field-step1-manager-name'), 'field-step1-manager-title');
       }
 
       let memberRowCounter = 0;
@@ -484,13 +544,47 @@
           '<td class="p-2">' +
           '<input id="field-step1-member-' +
           idSuffix +
-          '-title" type="text" class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30" placeholder="例: 支援員" />' +
+          '-title" type="text" readonly tabindex="-1" aria-readonly="true" class="w-full cursor-default rounded border border-gray-200 bg-panel-surface px-2 py-2 text-sm text-stone-700" value="" />' +
           '</td>';
         tbody.appendChild(tr);
-        fillSelect(tr.querySelector('select'));
+        const sel = tr.querySelector('select');
+        const titleInp = tr.querySelector('input[id^="field-step1-member-"][id$="-title"]');
+        fillSelect(sel);
+        bindStaffSelectToTitle(sel, titleInp.id);
       }
 
       document.getElementById('btn-step1-add-member-row').addEventListener('click', addMemberRow);
+
+      let externalRowCounter = 0;
+      function addExternalRow() {
+        externalRowCounter += 1;
+        const n = externalRowCounter;
+        const root = document.getElementById('step1-external-rows');
+        const row = document.createElement('div');
+        row.className = 'step1-external-row flex flex-col gap-2 rounded border border-gray-200 bg-white p-4 sm:flex-row sm:items-end sm:gap-4';
+        row.dataset.externalIndex = String(n);
+        row.innerHTML =
+          '<div class="min-w-0 flex-1">' +
+          '<label class="mb-2 block text-xs text-stone-500" for="field-step1-external-' +
+          n +
+          '-name">氏名（自由入力）</label>' +
+          '<input id="field-step1-external-' +
+          n +
+          '-name" type="text" data-external-name="1" class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30" placeholder="例: 沢登 武" />' +
+          '</div>' +
+          '<div class="min-w-0 flex-1">' +
+          '<label class="mb-2 block text-xs text-stone-500" for="field-step1-external-' +
+          n +
+          '-title">職種・肩書（自動表示）</label>' +
+          '<input id="field-step1-external-' +
+          n +
+          '-title" type="text" readonly tabindex="-1" aria-readonly="true" data-external-title-display="1" class="w-full cursor-default rounded border border-gray-200 bg-panel-surface px-2 py-2 text-sm text-stone-700" value="" />' +
+          '</div>';
+        root.appendChild(row);
+        bindExternalNameInput(row.querySelector('[data-external-name]'));
+      }
+
+      document.getElementById('btn-step1-add-external-row').addEventListener('click', addExternalRow);
 
       function getStepPanel(step) {
         return document.querySelector('.step-panel[data-step="' + step + '"]');
@@ -549,17 +643,24 @@
         });
         document.querySelectorAll('#step1-member-tbody tr[data-dynamic-member]').forEach(function (tr, i) {
           const sel = tr.querySelector('select');
-          const inp = tr.querySelector('input[type="text"]');
+          const inp = tr.querySelector('input[readonly][id$="-title"]');
           rows.push({
             role: '委員' + (i + 1),
             name: sel ? sel.options[sel.selectedIndex].text : '',
             title: inp ? inp.value : '',
           });
         });
-        rows.push({
-          role: '外部委員',
-          name: val('field-step1-external-1-name'),
-          title: val('field-step1-external-1-title'),
+        document.querySelectorAll('#step1-external-rows .step1-external-row').forEach(function (row, i) {
+          const nameInp = row.querySelector('[data-external-name]');
+          const titleInp = row.querySelector('[data-external-title-display]');
+          const nameVal = nameInp ? nameInp.value.trim() : '';
+          const titleVal = titleInp ? titleInp.value.trim() : '';
+          if (!nameVal && !titleVal) return;
+          rows.push({
+            role: '外部委員' + (i + 1),
+            name: nameVal || '（未入力）',
+            title: titleVal || '—',
+          });
         });
         return rows;
       }
@@ -802,6 +903,8 @@
 
       initStaffDropdowns();
       addMemberRow();
+      addExternalRow();
+      addExternalRow();
       renderCalendar();
       goToStepIndex(0);
     })();
