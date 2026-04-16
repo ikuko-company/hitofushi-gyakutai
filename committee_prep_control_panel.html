@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>委員会準備用コントロールパネル — 2026 虐待防止委員会 開催準備</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            panel: {
+              bg: '#f0faf4',
+              surface: '#f7fcf9',
+              border: '#cfe8d8',
+              accent: '#5fb88a',
+              accentMuted: '#e3f4eb',
+            },
+          },
+          fontFamily: {
+            sans: ['"Meiryo UI"', 'Meiryo', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .panel-card {
+      border: 1px solid rgb(207 232 216);
+      background-color: rgb(247 252 249);
+      border-radius: 0.25rem;
+    }
+    .folder-addon {
+      transition: background-color 0.2s ease, color 0.2s ease, filter 0.2s ease;
+    }
+    .folder-addon:hover {
+      background-color: rgb(227 244 235);
+      filter: brightness(1.08);
+    }
+    .folder-addon:focus-visible {
+      outline: 2px solid rgb(95 184 138);
+      outline-offset: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-panel-bg text-stone-800 antialiased">
+  <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-8">
+    <!-- ヘッダー塊 -->
+    <header class="mb-8 rounded border border-gray-200 bg-white p-6 shadow-sm">
+      <p class="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500" id="page-product-label">
+        委員会準備用コントロールパネル
+      </p>
+      <h1 class="text-xl font-bold text-stone-900 sm:text-2xl" id="page-title">
+        2026 虐待防止委員会 開催準備ダッシュボード
+      </h1>
+      <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-8">
+        <div class="flex min-w-0 flex-1 flex-col gap-2 rounded border border-panel-border bg-panel-surface p-4">
+          <span class="text-xs font-medium text-stone-500">事業所名</span>
+          <input
+            id="field-meta-facility-name"
+            type="text"
+            class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+            value="ワークショップひとふし"
+            autocomplete="organization"
+          />
+        </div>
+        <div class="flex min-w-0 flex-1 flex-col gap-2 rounded border border-panel-border bg-panel-surface p-4">
+          <span class="text-xs font-medium text-stone-500">サービス種別</span>
+          <input
+            id="field-meta-service-type"
+            type="text"
+            class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+            value="就労継続支援B型事業所"
+          />
+        </div>
+      </div>
+    </header>
+
+    <!-- ステップインジケータ -->
+    <nav class="mb-8 flex flex-wrap items-center gap-2" aria-label="進捗" id="wizard-step-indicator"></nav>
+
+    <form id="committee-prep-form" class="space-y-8" novalidate>
+      <!-- Step 1 -->
+      <section
+        data-step="1"
+        class="step-panel panel-card p-6 shadow-sm"
+        aria-labelledby="step-1-heading"
+      >
+        <h2 id="step-1-heading" class="mb-4 text-lg font-semibold text-stone-900">
+          Step 1 — 委員会メンバー選出
+        </h2>
+        <p class="mb-4 text-sm text-stone-600">
+          氏名は登録職員データからドロップダウンで選択（自動取得）。外部委員は自由入力。
+        </p>
+        <div class="overflow-x-auto rounded border border-gray-200 bg-white">
+          <table class="w-full min-w-[520px] border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 bg-panel-surface">
+                <th class="p-2 text-left font-medium text-stone-700">役割</th>
+                <th class="p-2 text-left font-medium text-stone-700">氏名</th>
+                <th class="p-2 text-left font-medium text-stone-700">職種・肩書</th>
+              </tr>
+            </thead>
+            <tbody id="step1-member-tbody">
+              <tr class="border-b border-gray-100">
+                <td class="p-2 text-stone-700">委員長</td>
+                <td class="p-2">
+                  <select
+                    id="field-step1-chair-name"
+                    class="w-full rounded border border-gray-200 bg-white px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                  ></select>
+                </td>
+                <td class="p-2">
+                  <input
+                    id="field-step1-chair-title"
+                    type="text"
+                    class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                    placeholder="例: 施設長"
+                  />
+                </td>
+              </tr>
+              <tr class="border-b border-gray-100">
+                <td class="p-2 text-stone-700">虐待防止マネージャー</td>
+                <td class="p-2">
+                  <select
+                    id="field-step1-manager-name"
+                    class="w-full rounded border border-gray-200 bg-white px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                  ></select>
+                </td>
+                <td class="p-2">
+                  <input
+                    id="field-step1-manager-title"
+                    type="text"
+                    class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                    placeholder="例: ソーシャルワーカー"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            id="btn-step1-add-member-row"
+            class="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+          >
+            行追加（委員）
+          </button>
+        </div>
+        <div class="mt-6 rounded border border-panel-border bg-panel-surface p-4">
+          <h3 class="mb-2 text-sm font-semibold text-stone-800">外部委員</h3>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-4">
+              <div class="min-w-0 flex-1">
+                <label class="mb-2 block text-xs text-stone-500" for="field-step1-external-1-name">氏名（自由入力）</label>
+                <input
+                  id="field-step1-external-1-name"
+                  type="text"
+                  class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                <label class="mb-2 block text-xs text-stone-500" for="field-step1-external-1-title">職種・肩書</label>
+                <input
+                  id="field-step1-external-1-title"
+                  type="text"
+                  class="w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                  placeholder="例: 会計士"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2 -->
+      <section
+        data-step="2"
+        class="step-panel panel-card hidden p-6 shadow-sm"
+        aria-labelledby="step-2-heading"
+      >
+        <h2 id="step-2-heading" class="mb-4 text-lg font-semibold text-stone-900">
+          Step 2 — 現状把握と課題の洗い出し
+        </h2>
+        <div class="mb-6 flex flex-col gap-2 rounded border border-gray-200 bg-white p-4">
+          <label class="text-sm font-medium text-stone-800" for="field-step2-situation-text">
+            不適切なケア・身体拘束等に関する記述
+          </label>
+          <textarea
+            id="field-step2-situation-text"
+            rows="6"
+            class="w-full resize-y rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+            placeholder="現状や課題を入力してください。"
+          ></textarea>
+        </div>
+        <div class="rounded border border-panel-border bg-panel-surface p-4">
+          <h3 class="mb-2 text-sm font-semibold text-stone-800">AIによる文章の補正案</h3>
+          <p class="mb-4 text-xs text-stone-600">必要な回数だけ文章補正を実行できます（デモ: 定型の補正文を挿入）。</p>
+          <button
+            type="button"
+            id="btn-step2-ai-correct"
+            class="mb-4 rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+          >
+            文章補正
+          </button>
+          <label class="mb-2 block text-xs font-medium text-stone-600" for="field-step2-ai-suggestion-text">補正結果</label>
+          <textarea
+            id="field-step2-ai-suggestion-text"
+            rows="5"
+            readonly
+            class="w-full resize-y rounded border border-gray-200 bg-white px-2 py-2 text-sm text-stone-700"
+          ></textarea>
+        </div>
+      </section>
+
+      <!-- Step 3 -->
+      <section
+        data-step="3"
+        class="step-panel panel-card hidden p-6 shadow-sm"
+        aria-labelledby="step-3-heading"
+      >
+        <h2 id="step-3-heading" class="mb-4 text-lg font-semibold text-stone-900">
+          Step 3 — 虐待防止研修のテーマ案の策定
+        </h2>
+        <p class="mb-4 text-sm text-stone-600">
+          Step 2 の内容をもとにAIが案を生成した想定のドラフトから1件を選択してください（事業所単位・共通）。
+        </p>
+        <fieldset class="flex flex-col gap-4 rounded border border-gray-200 bg-white p-4">
+          <legend class="sr-only">テーマ案の選択</legend>
+          <label class="flex cursor-pointer items-start gap-4 rounded border border-transparent p-2 hover:bg-panel-accentMuted/60">
+            <input
+              type="radio"
+              name="theme-draft"
+              id="field-step3-theme-draft-1"
+              value="1"
+              class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
+              checked
+            />
+            <span class="min-w-0 flex-1">
+              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 1</span>
+              <input
+                id="field-step3-theme-text-1"
+                type="text"
+                class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                value="身体拘束の適正化と代替手段の共有"
+              />
+            </span>
+          </label>
+          <label class="flex cursor-pointer items-start gap-4 rounded border border-transparent p-2 hover:bg-panel-accentMuted/60">
+            <input
+              type="radio"
+              name="theme-draft"
+              id="field-step3-theme-draft-2"
+              value="2"
+              class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
+            />
+            <span class="min-w-0 flex-1">
+              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 2</span>
+              <input
+                id="field-step3-theme-text-2"
+                type="text"
+                class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                value="記録・報告体制の見直しと職員間連携"
+              />
+            </span>
+          </label>
+          <label class="flex cursor-pointer items-start gap-4 rounded border border-transparent p-2 hover:bg-panel-accentMuted/60">
+            <input
+              type="radio"
+              name="theme-draft"
+              id="field-step3-theme-draft-3"
+              value="3"
+              class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
+            />
+            <span class="min-w-0 flex-1">
+              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 3</span>
+              <input
+                id="field-step3-theme-text-3"
+                type="text"
+                class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+                value="利用者の意思尊重を中心とした支援の質向上"
+              />
+            </span>
+          </label>
+        </fieldset>
+      </section>
+
+      <!-- Step 4 -->
+      <section
+        data-step="4"
+        class="step-panel panel-card hidden p-6 shadow-sm"
+        aria-labelledby="step-4-heading"
+      >
+        <h2 id="step-4-heading" class="mb-4 text-lg font-semibold text-stone-900">
+          Step 4 — 虐待防止マニュアルの改定案（事業所共通）
+        </h2>
+        <div class="mb-6 flex flex-col gap-2">
+          <label class="text-sm font-medium text-stone-800" for="field-step4-manual-storage-url">保管先URL</label>
+          <div
+            class="flex overflow-hidden rounded border border-gray-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-panel-accent/30"
+            id="field-step4-url-input-group"
+          >
+            <input
+              id="field-step4-manual-storage-url"
+              type="url"
+              inputmode="url"
+              autocomplete="url"
+              placeholder="https://…"
+              class="min-w-0 flex-1 border-0 px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none"
+            />
+            <button
+              type="button"
+              id="btn-step4-folder-picker"
+              class="folder-addon flex shrink-0 items-center justify-center border-l border-gray-200 bg-panel-surface px-4 py-2 text-lg text-stone-600"
+              title="保管フォルダを開く（将来: ファイル保存API連携）"
+              aria-label="保管フォルダを開く"
+            >
+              📁
+            </button>
+          </div>
+          <p class="text-xs text-stone-500">📁 は入力欄内アドオン。ホバーで背景が明るくなります。</p>
+        </div>
+        <div class="rounded border border-panel-border bg-panel-surface p-4">
+          <h3 class="mb-2 text-sm font-semibold text-stone-800">AIによる改定案の要約</h3>
+          <button
+            type="button"
+            id="btn-step4-create-draft-summary"
+            class="mb-4 rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+          >
+            改定案作成
+          </button>
+          <textarea
+            id="field-step4-ai-manual-summary-text"
+            rows="8"
+            readonly
+            class="w-full resize-y rounded border border-gray-200 bg-white px-2 py-2 text-sm text-stone-700"
+            placeholder="改定案の要約がここに表示されます。"
+          ></textarea>
+        </div>
+      </section>
+
+      <!-- Step 5 -->
+      <section
+        data-step="5"
+        class="step-panel panel-card hidden p-6 shadow-sm"
+        aria-labelledby="step-5-heading"
+      >
+        <h2 id="step-5-heading" class="mb-4 text-lg font-semibold text-stone-900">
+          Step 5 — 虐待防止委員会の開催スケジュール
+        </h2>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              id="btn-step5-calendar-prev-month"
+              class="inline-flex items-center gap-2 rounded border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+            >
+              <span aria-hidden="true">◀</span> 前月
+            </button>
+            <button
+              type="button"
+              id="btn-step5-calendar-next-month"
+              class="inline-flex items-center gap-2 rounded border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+            >
+              翌月 <span aria-hidden="true">▶</span>
+            </button>
+          </div>
+          <p class="text-sm font-semibold text-stone-800" id="field-step5-calendar-month-label" aria-live="polite"></p>
+        </div>
+        <input type="hidden" id="field-step5-calendar-year" value="" />
+        <input type="hidden" id="field-step5-calendar-month-index" value="" />
+        <div class="overflow-x-auto rounded border border-gray-200 bg-white p-4">
+          <div class="grid grid-cols-7 gap-2 text-center text-xs font-medium text-stone-600">
+            <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div>
+            <div class="text-blue-600">土</div>
+            <div class="text-red-600">日</div>
+          </div>
+          <div id="field-step5-calendar-grid" class="mt-2 grid grid-cols-7 gap-2 text-sm"></div>
+        </div>
+        <p class="mt-4 text-xs text-stone-600">
+          日付をクリックし、種別を選択してください（将来: Google カレンダー連携用ID付き）。
+        </p>
+      </section>
+
+      <!-- 確認 -->
+      <section
+        data-step="confirm"
+        class="step-panel panel-card hidden p-6 shadow-sm"
+        aria-labelledby="confirm-heading"
+      >
+        <h2 id="confirm-heading" class="mb-4 text-lg font-semibold text-stone-900">確認</h2>
+        <p class="mb-6 text-sm text-stone-600">入力内容を確認し、必要なら各ブロックから該当ステップへ戻って修正してください。</p>
+        <div id="confirm-summary-root" class="flex flex-col gap-6"></div>
+      </section>
+
+      <!-- ナビゲーション -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-8">
+        <button
+          type="button"
+          id="btn-wizard-back"
+          class="rounded border border-gray-200 bg-white px-6 py-4 text-sm font-medium text-stone-800 transition hover:bg-panel-accentMuted disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          戻る
+        </button>
+        <div class="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            id="btn-wizard-next"
+            class="rounded border border-panel-accent bg-panel-accent px-6 py-4 text-sm font-medium text-white shadow-sm transition hover:brightness-105"
+          >
+            次へ
+          </button>
+          <button
+            type="button"
+            id="btn-wizard-final-determine"
+            class="hidden rounded border-2 border-red-500 bg-white px-8 py-4 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
+          >
+            決定
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function () {
+      const STAFF_OPTIONS = [
+        { value: '', label: '選択してください' },
+        { value: 'staff-001', label: '山田 太郎' },
+        { value: 'staff-002', label: '佐藤 花子' },
+        { value: 'staff-003', label: '鈴木 一郎' },
+      ];
+
+      let currentStepIndex = 0;
+      const stepOrder = ['1', '2', '3', '4', '5', 'confirm'];
+      const calendarState = {
+        year: 2026,
+        month: 3,
+        selections: {},
+      };
+
+      function padIdSegment(s) {
+        return String(s).padStart(2, '0');
+      }
+
+      function calendarKey(y, m, d) {
+        return y + '-' + padIdSegment(m + 1) + '-' + padIdSegment(d);
+      }
+
+      function fillSelect(selectEl) {
+        selectEl.innerHTML = '';
+        STAFF_OPTIONS.forEach(function (opt) {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          selectEl.appendChild(o);
+        });
+      }
+
+      function initStaffDropdowns() {
+        fillSelect(document.getElementById('field-step1-chair-name'));
+        fillSelect(document.getElementById('field-step1-manager-name'));
+        document.getElementById('field-step1-chair-name').value = 'staff-001';
+        document.getElementById('field-step1-manager-name').value = 'staff-002';
+      }
+
+      let memberRowCounter = 0;
+      function addMemberRow() {
+        memberRowCounter += 1;
+        const idSuffix = String(memberRowCounter);
+        const tbody = document.getElementById('step1-member-tbody');
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-100';
+        tr.dataset.dynamicMember = '1';
+        tr.innerHTML =
+          '<td class="p-2 text-stone-700">委員</td>' +
+          '<td class="p-2">' +
+          '<select id="field-step1-member-' +
+          idSuffix +
+          '-name" class="w-full rounded border border-gray-200 bg-white px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"></select>' +
+          '</td>' +
+          '<td class="p-2">' +
+          '<input id="field-step1-member-' +
+          idSuffix +
+          '-title" type="text" class="w-full rounded border border-gray-200 px-2 py-2 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30" placeholder="例: 支援員" />' +
+          '</td>';
+        tbody.appendChild(tr);
+        fillSelect(tr.querySelector('select'));
+      }
+
+      document.getElementById('btn-step1-add-member-row').addEventListener('click', addMemberRow);
+
+      function getStepPanel(step) {
+        return document.querySelector('.step-panel[data-step="' + step + '"]');
+      }
+
+      function renderStepIndicator() {
+        const nav = document.getElementById('wizard-step-indicator');
+        nav.innerHTML = '';
+        const labels = ['1', '2', '3', '4', '5', '確認'];
+        labels.forEach(function (label, idx) {
+          const isActive = idx === currentStepIndex;
+          const span = document.createElement('span');
+          span.className =
+            'inline-flex min-h-[2rem] min-w-[2rem] items-center justify-center rounded border px-4 py-2 text-xs font-medium ' +
+            (isActive
+              ? 'border-panel-accent bg-panel-accentMuted text-stone-900'
+              : 'border-gray-200 bg-white text-stone-600');
+          span.textContent = idx === 5 ? '確認' : 'Step ' + label;
+          span.setAttribute('aria-current', isActive ? 'step' : 'false');
+          nav.appendChild(span);
+        });
+      }
+
+      function showStep(stepKey) {
+        document.querySelectorAll('.step-panel').forEach(function (el) {
+          el.classList.add('hidden');
+        });
+        const panel = getStepPanel(stepKey);
+        if (panel) panel.classList.remove('hidden');
+        renderStepIndicator();
+
+        const isConfirm = stepKey === 'confirm';
+        document.getElementById('btn-wizard-next').classList.toggle('hidden', isConfirm);
+        document.getElementById('btn-wizard-final-determine').classList.toggle('hidden', !isConfirm);
+        document.getElementById('btn-wizard-back').disabled = currentStepIndex === 0;
+
+        if (isConfirm) renderSummary();
+      }
+
+      function goToStepIndex(idx) {
+        currentStepIndex = Math.max(0, Math.min(stepOrder.length - 1, idx));
+        showStep(stepOrder[currentStepIndex]);
+      }
+
+      function collectStep1Summary() {
+        const rows = [];
+        rows.push({
+          role: '委員長',
+          name: textOfSelect('field-step1-chair-name'),
+          title: val('field-step1-chair-title'),
+        });
+        rows.push({
+          role: '虐待防止マネージャー',
+          name: textOfSelect('field-step1-manager-name'),
+          title: val('field-step1-manager-title'),
+        });
+        document.querySelectorAll('#step1-member-tbody tr[data-dynamic-member]').forEach(function (tr, i) {
+          const sel = tr.querySelector('select');
+          const inp = tr.querySelector('input[type="text"]');
+          rows.push({
+            role: '委員' + (i + 1),
+            name: sel ? sel.options[sel.selectedIndex].text : '',
+            title: inp ? inp.value : '',
+          });
+        });
+        rows.push({
+          role: '外部委員',
+          name: val('field-step1-external-1-name'),
+          title: val('field-step1-external-1-title'),
+        });
+        return rows;
+      }
+
+      function val(id) {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+      }
+
+      function textOfSelect(id) {
+        const el = document.getElementById(id);
+        if (!el || el.tagName !== 'SELECT') return '';
+        return el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : '';
+      }
+
+      function selectedThemeText() {
+        const r = document.querySelector('input[name="theme-draft"]:checked');
+        if (!r) return '';
+        const v = r.value;
+        return val('field-step3-theme-text-' + v);
+      }
+
+      function renderSummary() {
+        const root = document.getElementById('confirm-summary-root');
+        root.innerHTML = '';
+
+        function block(title, bodyHtml, stepNum) {
+          const wrap = document.createElement('div');
+          wrap.className = 'rounded border border-gray-200 bg-white p-4';
+          wrap.innerHTML =
+            '<div class="mb-4 flex flex-wrap items-start justify-between gap-4">' +
+            '<h3 class="text-sm font-semibold text-stone-900">' +
+            title +
+            '</h3>' +
+            '<button type="button" class="rounded border border-gray-200 bg-panel-surface px-4 py-2 text-xs font-medium text-stone-800 transition hover:bg-panel-accentMuted" data-jump-step="' +
+            stepNum +
+            '">修正する</button>' +
+            '</div>' +
+            '<div class="text-sm text-stone-700">' +
+            bodyHtml +
+            '</div>';
+          root.appendChild(wrap);
+        }
+
+        const s1 = collectStep1Summary();
+        let s1Html =
+          '<ul class="list-inside list-disc space-y-2">' +
+          s1
+            .map(function (r) {
+              return (
+                '<li><span class="font-medium">' +
+                escapeHtml(r.role) +
+                '</span> — ' +
+                escapeHtml(r.name || '（未入力）') +
+                ' / ' +
+                escapeHtml(r.title || '—') +
+                '</li>'
+              );
+            })
+            .join('') +
+          '</ul>';
+        block('Step 1 — メンバー', s1Html, 1);
+
+        block(
+          'Step 2 — 現状・課題',
+          '<p class="mb-2 whitespace-pre-wrap">' +
+            escapeHtml(val('field-step2-situation-text') || '（未入力）') +
+            '</p><p class="text-xs text-stone-500">補正案:</p><p class="whitespace-pre-wrap">' +
+            escapeHtml(val('field-step2-ai-suggestion-text') || '（未生成）') +
+            '</p>',
+          2
+        );
+
+        block(
+          'Step 3 — 研修テーマ',
+          '<p>' + escapeHtml(selectedThemeText() || '（未選択）') + '</p>',
+          3
+        );
+
+        block(
+          'Step 4 — マニュアル改定（事業所共通）',
+          '<p class="mb-2"><span class="text-stone-500">URL:</span> ' +
+            escapeHtml(val('field-step4-manual-storage-url') || '（未入力）') +
+            '</p><p class="whitespace-pre-wrap">' +
+            escapeHtml(val('field-step4-ai-manual-summary-text') || '（未生成）') +
+            '</p>',
+          4
+        );
+
+        function calendarEventTypeLabel(code) {
+          if (code === 'committee') return '虐待防止委員会';
+          if (code === 'training') return '虐待防止研修';
+          return code || '';
+        }
+        const schedLines = Object.keys(calendarState.selections)
+          .sort()
+          .map(function (k) {
+            return (
+              '<li>' +
+              escapeHtml(k) +
+              ' — ' +
+              escapeHtml(calendarEventTypeLabel(calendarState.selections[k])) +
+              '</li>'
+            );
+          });
+        const schedHtml =
+          schedLines.length > 0
+            ? '<ul class="list-inside list-disc space-y-2">' + schedLines.join('') + '</ul>'
+            : '<p>（日程の種別が未設定です）</p>';
+        block('Step 5 — スケジュール', schedHtml, 5);
+
+        root.querySelectorAll('[data-jump-step]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const s = parseInt(btn.getAttribute('data-jump-step'), 10);
+            goToStepIndex(s - 1);
+          });
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      document.getElementById('btn-wizard-back').addEventListener('click', function () {
+        if (currentStepIndex > 0) goToStepIndex(currentStepIndex - 1);
+      });
+
+      document.getElementById('btn-wizard-next').addEventListener('click', function () {
+        if (currentStepIndex < stepOrder.length - 1) goToStepIndex(currentStepIndex + 1);
+      });
+
+      document.getElementById('btn-wizard-final-determine').addEventListener('click', function () {
+        alert('決定しました（デモ）。実装時はAPIへ送信します。');
+      });
+
+      document.getElementById('btn-step2-ai-correct').addEventListener('click', function () {
+        const base = val('field-step2-situation-text');
+        const demo =
+          '【補正案】\n' +
+          (base
+            ? base.replace(/\s+/g, ' ').trim() + '\n\n上記を踏まえ、事実と推測を分け、関係者・時系列を明示した記述へ整理しました（デモ）。'
+            : '入力内容がありません。現状と課題を入力してから再度お試しください。');
+        document.getElementById('field-step2-ai-suggestion-text').value = demo;
+      });
+
+      document.getElementById('btn-step4-create-draft-summary').addEventListener('click', function () {
+        const url = val('field-step4-manual-storage-url');
+        document.getElementById('field-step4-ai-manual-summary-text').value =
+          '【事業所共通マニュアル改定案・要約（デモ）】\n' +
+          '・保管先: ' +
+          (url || '（URL未入力）') +
+          '\n' +
+          '・身体拘束・報告手順・職員研修の各章を最新法令に整合。\n' +
+          '・別紙チェックリストを追加し、委員会での確認項目を明確化。';
+      });
+
+      document.getElementById('btn-step4-folder-picker').addEventListener('click', function () {
+        alert('フォルダ選択（将来: ファイル保存APIと連携）');
+      });
+
+      function daysInMonth(year, monthIndex) {
+        return new Date(year, monthIndex + 1, 0).getDate();
+      }
+
+      function renderCalendar() {
+        const y = calendarState.year;
+        const m = calendarState.month;
+        document.getElementById('field-step5-calendar-year').value = String(y);
+        document.getElementById('field-step5-calendar-month-index').value = String(m);
+        document.getElementById('field-step5-calendar-month-label').textContent =
+          y + '年 ' + (m + 1) + '月';
+
+        const grid = document.getElementById('field-step5-calendar-grid');
+        grid.innerHTML = '';
+        const firstDow = new Date(y, m, 1).getDay();
+        const offset = firstDow === 0 ? 6 : firstDow - 1;
+        for (let i = 0; i < offset; i += 1) {
+          const cell = document.createElement('div');
+          cell.className = 'min-h-[3rem]';
+          grid.appendChild(cell);
+        }
+        const dim = daysInMonth(y, m);
+        for (let d = 1; d <= dim; d += 1) {
+          const dow = new Date(y, m, d).getDay();
+          const isSat = dow === 6;
+          const isSun = dow === 0;
+          const key = calendarKey(y, m, d);
+          const wrap = document.createElement('div');
+          wrap.id = 'field-step5-calendar-cell-' + key;
+          wrap.className = 'flex min-h-[3rem] flex-col gap-2 rounded border border-gray-200 bg-panel-surface p-2';
+          const dayBtn = document.createElement('button');
+          dayBtn.type = 'button';
+          dayBtn.id = 'field-step5-calendar-day-' + key;
+          dayBtn.className =
+            'text-left text-sm font-semibold ' +
+            (isSun ? 'text-red-600' : isSat ? 'text-blue-600' : 'text-stone-800');
+          dayBtn.textContent = String(d);
+          const sel = document.createElement('select');
+          sel.id = 'field-step5-calendar-event-type-' + key;
+          sel.className =
+            'w-full rounded border border-gray-200 bg-white px-2 py-2 text-xs focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30';
+          sel.innerHTML =
+            '<option value="">（未設定）</option>' +
+            '<option value="committee">虐待防止委員会</option>' +
+            '<option value="training">虐待防止研修</option>';
+          sel.value = calendarState.selections[key] || '';
+          sel.addEventListener('change', function () {
+            if (sel.value) calendarState.selections[key] = sel.value;
+            else delete calendarState.selections[key];
+          });
+          dayBtn.addEventListener('click', function () {
+            sel.focus();
+          });
+          wrap.appendChild(dayBtn);
+          wrap.appendChild(sel);
+          grid.appendChild(wrap);
+        }
+      }
+
+      document.getElementById('btn-step5-calendar-prev-month').addEventListener('click', function () {
+        calendarState.month -= 1;
+        if (calendarState.month < 0) {
+          calendarState.month = 11;
+          calendarState.year -= 1;
+        }
+        renderCalendar();
+      });
+      document.getElementById('btn-step5-calendar-next-month').addEventListener('click', function () {
+        calendarState.month += 1;
+        if (calendarState.month > 11) {
+          calendarState.month = 0;
+          calendarState.year += 1;
+        }
+        renderCalendar();
+      });
+
+      initStaffDropdowns();
+      addMemberRow();
+      renderCalendar();
+      goToStepIndex(0);
+    })();
+  </script>
+</body>
+</html>
