@@ -907,7 +907,33 @@
       addExternalRow();
       renderCalendar();
       goToStepIndex(0);
-    })();
+     })();
+  </script>
+  <script>
+    async function testLine() {
+      // ここに発行済みのURLを貼り付けてください
+      const gasUrl = "https://script.google.com/macros/s/AKfycbxJMNSS7G1VE5BVwPMu2pbdI-nd9EDeloCbwd3Nb-xsTnSidEJdUGmyEqohhKFkfM20/exec";
+      
+      try {
+        await fetch(gasUrl, {
+          method: "POST",
+          mode: "no-cors"
+        });
+        alert("LINEに送信指示を出しました！スマホを確認してください。");
+      } catch (e) {
+        alert("エラーが発生しました: " + e);
+      }
+    }
+  
+    // 画面が読み込まれたら、決定ボタンにこの機能を結びつける
+    window.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('btn-wizard-final-determine');
+      if (btn) {
+        btn.addEventListener('click', testLine);
+      } else {
+        console.error("決定ボタンが見つかりません。idを確認してください。");
+      }
+    });
   </script>
 </body>
 </html>
