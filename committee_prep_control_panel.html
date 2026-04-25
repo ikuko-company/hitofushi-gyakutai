@@ -356,10 +356,10 @@
             <div class="text-blue-600">土</div>
             <div class="text-red-600">日</div>
           </div>
-          <div id="field-step5-calendar-grid" class="mt-2 grid grid-cols-7 gap-2 text-sm"></div>
+          <div id="field-step5-calendar-grid" class="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2 text-sm"></div>
         </div>
         <p class="mt-4 text-xs text-stone-600">
-          日付をクリックし、種別を選択してください（将来: Google カレンダー連携用ID付き）。
+          開催日に「○」を1件だけ選び、時間を入力してください。別の日に「○」を付け替えると、前の日の指定は解除されます。
         </p>
       </section>
 
@@ -421,11 +421,38 @@
 
       let currentStepIndex = 0;
       const stepOrder = ['1', '2', '3', '4', 'confirm'];
+      /** カレンダー: selections は日付キー YYYY-MM-DD が最大1件のみ。値は { mark: 'circle', time: 'HH:mm' } */
       const calendarState = {
         year: 2026,
         month: 3,
         selections: {},
       };
+
+      function calendarSelectedDateKey() {
+        const keys = Object.keys(calendarState.selections);
+        return keys.length ? keys[0] : null;
+      }
+
+      function calendarSetCircleOnly(key) {
+        calendarState.selections = {};
+        if (key) {
+          calendarState.selections[key] = { mark: 'circle', time: '' };
+        }
+      }
+
+      function calendarUpdateTimeForKey(key, timeValue) {
+        if (calendarState.selections[key]) {
+          calendarState.selections[key].time = String(timeValue || '');
+        }
+      }
+
+      function formatCalendarSlotForConfirm(key) {
+        const row = calendarState.selections[key];
+        if (!row) return '';
+        const t = (row.time || '').trim();
+        if (t) return key + ' ' + t;
+        return key + ' （時間未入力）';
+      }
 
       function padIdSegment(s) {
         return String(s).padStart(2, '0');
@@ -731,26 +758,10 @@
           3
         );
 
-        function calendarEventTypeLabel(code) {
-          if (code === 'committee') return '虐待防止委員会';
-          if (code === 'training') return '虐待防止研修';
-          return code || '';
-        }
-        const schedLines = Object.keys(calendarState.selections)
-          .sort()
-          .map(function (k) {
-            return (
-              '<li>' +
-              escapeHtml(k) +
-              ' — ' +
-              escapeHtml(calendarEventTypeLabel(calendarState.selections[k])) +
-              '</li>'
-            );
-          });
-        const schedHtml =
-          schedLines.length > 0
-            ? '<ul class="list-inside list-disc space-y-2">' + schedLines.join('') + '</ul>'
-            : '<p>（日程の種別が未設定です）</p>';
+        const selKey = calendarSelectedDateKey();
+        const schedHtml = selKey
+          ? '<p class="font-medium">' + escapeHtml(formatCalendarSlotForConfirm(selKey)) + '</p>'
+          : '<p>（開催日の「○」が未選択です）</p>';
         block('Step 5 — スケジュール', schedHtml, 4);
 
         root.querySelectorAll('[data-jump-step]').forEach(function (btn) {
@@ -829,9 +840,10 @@
         const offset = firstDow === 0 ? 6 : firstDow - 1;
         for (let i = 0; i < offset; i += 1) {
           const cell = document.createElement('div');
-          cell.className = 'min-h-[3rem]';
+          cell.className = 'min-h-[6.5rem] sm:min-h-[7rem]';
           grid.appendChild(cell);
         }
+        const selectedKey = calendarSelectedDateKey();
         const dim = daysInMonth(y, m);
         for (let d = 1; d <= dim; d += 1) {
           const dow = new Date(y, m, d).getDay();
@@ -840,33 +852,71 @@
           const key = calendarKey(y, m, d);
           const wrap = document.createElement('div');
           wrap.id = 'field-step5-calendar-cell-' + key;
-          wrap.className = 'flex min-h-[3rem] flex-col gap-2 rounded border border-gray-200 bg-panel-surface p-2';
+          wrap.className =
+            'flex min-h-[6.5rem] flex-col gap-1 rounded border border-gray-200 bg-panel-surface p-1.5 sm:min-h-[7rem] sm:gap-1.5 sm:p-2';
+
           const dayBtn = document.createElement('button');
           dayBtn.type = 'button';
           dayBtn.id = 'field-step5-calendar-day-' + key;
           dayBtn.className =
-            'text-left text-sm font-semibold ' +
+            'shrink-0 text-left text-sm font-semibold leading-none ' +
             (isSun ? 'text-red-600' : isSat ? 'text-blue-600' : 'text-stone-800');
           dayBtn.textContent = String(d);
+
           const sel = document.createElement('select');
-          sel.id = 'field-step5-calendar-event-type-' + key;
+          sel.id = 'field-step5-calendar-mark-' + key;
+          sel.setAttribute('aria-label', key + ' の予定');
           sel.className =
-            'w-full rounded border border-gray-200 bg-white px-2 py-2 text-xs focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30';
+            'h-8 w-full min-w-0 shrink-0 rounded border border-gray-200 bg-white px-1 py-0.5 text-xs focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30';
           sel.innerHTML =
-            '<option value="">（未設定）</option>' +
-            '<option value="committee">虐待防止委員会</option>' +
-            '<option value="training">虐待防止研修</option>';
-          sel.value = calendarState.selections[key] || '';
+            '<option value="">ブランク（未選択）</option>' +
+            '<option value="circle">○</option>';
+          sel.value = selectedKey === key ? 'circle' : '';
+
+          const timeHost = document.createElement('div');
+          timeHost.className = 'min-h-0 flex-1';
+
+          function mountTimeInput() {
+            timeHost.innerHTML = '';
+            if (calendarSelectedDateKey() !== key) return;
+            const row = calendarState.selections[key];
+            const timeInp = document.createElement('input');
+            timeInp.type = 'time';
+            timeInp.id = 'field-step5-calendar-time-' + key;
+            timeInp.step = 60;
+            timeInp.value = row && row.time ? row.time : '';
+            timeInp.className =
+              'mt-0.5 w-full min-w-0 max-w-full rounded border border-gray-200 bg-white px-1 py-1 text-[11px] leading-tight focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30 sm:text-xs';
+            timeInp.addEventListener('input', function () {
+              calendarUpdateTimeForKey(key, timeInp.value);
+            });
+            timeInp.addEventListener('change', function () {
+              calendarUpdateTimeForKey(key, timeInp.value);
+            });
+            timeHost.appendChild(timeInp);
+          }
+
           sel.addEventListener('change', function () {
-            if (sel.value) calendarState.selections[key] = sel.value;
-            else delete calendarState.selections[key];
+            if (sel.value === 'circle') {
+              calendarSetCircleOnly(key);
+            } else {
+              if (calendarSelectedDateKey() === key) {
+                calendarSetCircleOnly(null);
+              }
+            }
+            renderCalendar();
           });
+
           dayBtn.addEventListener('click', function () {
             sel.focus();
           });
+
           wrap.appendChild(dayBtn);
           wrap.appendChild(sel);
+          wrap.appendChild(timeHost);
           grid.appendChild(wrap);
+
+          mountTimeInput();
         }
       }
 
