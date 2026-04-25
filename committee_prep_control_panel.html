@@ -170,73 +170,57 @@
         </div>
       </section>
 
-      <!-- Step 2 -->
+      <!-- Step 2（旧 Step 2 + Step 3: 議題テーマ案・現状把握を同一画面） -->
       <section
         data-step="2"
         class="step-panel panel-card hidden p-6 shadow-sm"
         aria-labelledby="step-2-heading"
       >
-        <h2 id="step-2-heading" class="mb-4 text-lg font-semibold text-stone-900">
-          Step 2 — 現状把握と課題の洗い出し
+        <h2 id="step-2-heading" class="mb-2 text-lg font-semibold text-stone-900">
+          Step 2 — 議題のテーマ案作成（現状把握と課題の洗い出し）
         </h2>
+        <p class="mb-4 text-sm text-stone-600">
+          自事業所の気になることを記入し、AIのテーマ案から議案を1件選んでください（事業所単位・共通）。虐待防止研修のテーマ案もここでまとめて扱います。
+        </p>
         <div class="mb-6 flex flex-col gap-2 rounded border border-gray-200 bg-white p-4">
           <label class="text-sm font-medium text-stone-800" for="field-step2-situation-text">
-            不適切なケア・身体拘束等に関する記述
+            自事業所の気になること
           </label>
+          <p class="text-xs text-stone-500">
+            駄文を遠慮もなく書き散らして大丈夫です。
+          </p>
           <textarea
             id="field-step2-situation-text"
             rows="6"
             class="w-full resize-y rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-            placeholder="現状や課題を入力してください。"
+            placeholder="現状や課題、不適切なケア・身体拘束など気になる点を入力してください。"
           ></textarea>
         </div>
-        <div class="rounded border border-panel-border bg-panel-surface p-4">
-          <h3 class="mb-2 text-sm font-semibold text-stone-800">AIによる文章の補正案</h3>
-          <p class="mb-4 text-xs text-stone-600">必要な回数だけ文章補正を実行できます（デモ: 定型の補正文を挿入）。</p>
+        <div class="mb-6 flex flex-wrap items-center justify-end gap-4">
           <button
             type="button"
-            id="btn-step2-ai-correct"
-            class="mb-4 rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+            id="btn-step2-theme-create"
+            class="rounded border-2 border-red-400 bg-white px-6 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
           >
-            文章補正
+            テーマ案作成
           </button>
-          <label class="mb-2 block text-xs font-medium text-stone-600" for="field-step2-ai-suggestion-text">補正結果</label>
-          <textarea
-            id="field-step2-ai-suggestion-text"
-            rows="5"
-            readonly
-            class="w-full resize-y rounded border border-gray-200 bg-white px-2 py-2 text-sm text-stone-700"
-          ></textarea>
         </div>
-      </section>
-
-      <!-- Step 3 -->
-      <section
-        data-step="3"
-        class="step-panel panel-card hidden p-6 shadow-sm"
-        aria-labelledby="step-3-heading"
-      >
-        <h2 id="step-3-heading" class="mb-4 text-lg font-semibold text-stone-900">
-          Step 3 — 虐待防止研修のテーマ案の策定
-        </h2>
-        <p class="mb-4 text-sm text-stone-600">
-          Step 2 の内容をもとにAIが案を生成した想定のドラフトから1件を選択してください（事業所単位・共通）。
-        </p>
-        <fieldset class="flex flex-col gap-4 rounded border border-gray-200 bg-white p-4">
+        <p class="mb-3 text-sm font-medium text-stone-800">議案をAIによるテーマ案から選択してください</p>
+        <fieldset class="mb-6 flex flex-col gap-4 rounded border border-gray-200 bg-white p-4">
           <legend class="sr-only">テーマ案の選択</legend>
           <label class="flex cursor-pointer items-start gap-4 rounded border border-transparent p-2 hover:bg-panel-accentMuted/60">
             <input
               type="radio"
               name="theme-draft"
-              id="field-step3-theme-draft-1"
+              id="field-step2-theme-draft-1"
               value="1"
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
               checked
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 1</span>
+              <span class="mb-2 block text-xs font-medium text-stone-500">案 1</span>
               <input
-                id="field-step3-theme-text-1"
+                id="field-step2-theme-text-1"
                 type="text"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
                 value="身体拘束の適正化と代替手段の共有"
@@ -247,14 +231,14 @@
             <input
               type="radio"
               name="theme-draft"
-              id="field-step3-theme-draft-2"
+              id="field-step2-theme-draft-2"
               value="2"
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 2</span>
+              <span class="mb-2 block text-xs font-medium text-stone-500">案 2</span>
               <input
-                id="field-step3-theme-text-2"
+                id="field-step2-theme-text-2"
                 type="text"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
                 value="記録・報告体制の見直しと職員間連携"
@@ -265,14 +249,14 @@
             <input
               type="radio"
               name="theme-draft"
-              id="field-step3-theme-draft-3"
+              id="field-step2-theme-draft-3"
               value="3"
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">ドラフト 3</span>
+              <span class="mb-2 block text-xs font-medium text-stone-500">案 3</span>
               <input
-                id="field-step3-theme-text-3"
+                id="field-step2-theme-text-3"
                 type="text"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
                 value="利用者の意思尊重を中心とした支援の質向上"
@@ -282,9 +266,9 @@
         </fieldset>
       </section>
 
-      <!-- Step 4 -->
+      <!-- Step 4（ウィザード上は第3画面・見出しは従来どおり Step 4） -->
       <section
-        data-step="4"
+        data-step="3"
         class="step-panel panel-card hidden p-6 shadow-sm"
         aria-labelledby="step-4-heading"
       >
@@ -336,9 +320,9 @@
         </div>
       </section>
 
-      <!-- Step 5 -->
+      <!-- Step 5（ウィザード上は第4画面・見出しは従来どおり Step 5） -->
       <section
-        data-step="5"
+        data-step="4"
         class="step-panel panel-card hidden p-6 shadow-sm"
         aria-labelledby="step-5-heading"
       >
@@ -436,7 +420,7 @@
       };
 
       let currentStepIndex = 0;
-      const stepOrder = ['1', '2', '3', '4', '5', 'confirm'];
+      const stepOrder = ['1', '2', '3', '4', 'confirm'];
       const calendarState = {
         year: 2026,
         month: 3,
@@ -593,7 +577,7 @@
       function renderStepIndicator() {
         const nav = document.getElementById('wizard-step-indicator');
         nav.innerHTML = '';
-        const labels = ['1', '2', '3', '4', '5', '確認'];
+        const labels = ['1', '2', '4', '5', '確認'];
         labels.forEach(function (label, idx) {
           const isActive = idx === currentStepIndex;
           const span = document.createElement('span');
@@ -602,7 +586,7 @@
             (isActive
               ? 'border-panel-accent bg-panel-accentMuted text-stone-900'
               : 'border-gray-200 bg-white text-stone-600');
-          span.textContent = idx === 5 ? '確認' : 'Step ' + label;
+          span.textContent = idx === 4 ? '確認' : 'Step ' + label;
           span.setAttribute('aria-current', isActive ? 'step' : 'false');
           nav.appendChild(span);
         });
@@ -680,7 +664,7 @@
         const r = document.querySelector('input[name="theme-draft"]:checked');
         if (!r) return '';
         const v = r.value;
-        return val('field-step3-theme-text-' + v);
+        return val('field-step2-theme-text-' + v);
       }
 
       function renderSummary() {
@@ -725,19 +709,16 @@
         block('Step 1 — メンバー', s1Html, 1);
 
         block(
-          'Step 2 — 現状・課題',
-          '<p class="mb-2 whitespace-pre-wrap">' +
+          'Step 2 — 議題テーマ（現状・課題・選択）',
+          '<p class="mb-2 text-xs font-medium text-stone-500">気になること・現状</p>' +
+            '<p class="mb-4 whitespace-pre-wrap">' +
             escapeHtml(val('field-step2-situation-text') || '（未入力）') +
-            '</p><p class="text-xs text-stone-500">補正案:</p><p class="whitespace-pre-wrap">' +
-            escapeHtml(val('field-step2-ai-suggestion-text') || '（未生成）') +
+            '</p>' +
+            '<p class="mb-2 text-xs font-medium text-stone-500">選択した議案（テーマ）</p>' +
+            '<p>' +
+            escapeHtml(selectedThemeText() || '（未選択）') +
             '</p>',
           2
-        );
-
-        block(
-          'Step 3 — 研修テーマ',
-          '<p>' + escapeHtml(selectedThemeText() || '（未選択）') + '</p>',
-          3
         );
 
         block(
@@ -747,7 +728,7 @@
             '</p><p class="whitespace-pre-wrap">' +
             escapeHtml(val('field-step4-ai-manual-summary-text') || '（未生成）') +
             '</p>',
-          4
+          3
         );
 
         function calendarEventTypeLabel(code) {
@@ -770,7 +751,7 @@
           schedLines.length > 0
             ? '<ul class="list-inside list-disc space-y-2">' + schedLines.join('') + '</ul>'
             : '<p>（日程の種別が未設定です）</p>';
-        block('Step 5 — スケジュール', schedHtml, 5);
+        block('Step 5 — スケジュール', schedHtml, 4);
 
         root.querySelectorAll('[data-jump-step]').forEach(function (btn) {
           btn.addEventListener('click', function () {
@@ -800,14 +781,19 @@
         alert('決定しました（デモ）。実装時はAPIへ送信します。');
       });
 
-      document.getElementById('btn-step2-ai-correct').addEventListener('click', function () {
-        const base = val('field-step2-situation-text');
-        const demo =
-          '【補正案】\n' +
-          (base
-            ? base.replace(/\s+/g, ' ').trim() + '\n\n上記を踏まえ、事実と推測を分け、関係者・時系列を明示した記述へ整理しました（デモ）。'
-            : '入力内容がありません。現状と課題を入力してから再度お試しください。');
-        document.getElementById('field-step2-ai-suggestion-text').value = demo;
+      function demoThemeDraftsFromSituation() {
+        const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
+        const hint = base ? '（入力メモを反映した想定） ' : '';
+        document.getElementById('field-step2-theme-text-1').value =
+          hint + '身体拘束の適正化と代替手段の共有';
+        document.getElementById('field-step2-theme-text-2').value =
+          hint + '記録・報告体制の見直しと職員間連携';
+        document.getElementById('field-step2-theme-text-3').value =
+          hint + '利用者の意思尊重を中心とした支援の質向上';
+      }
+
+      document.getElementById('btn-step2-theme-create').addEventListener('click', function () {
+        demoThemeDraftsFromSituation();
       });
 
       document.getElementById('btn-step4-create-draft-summary').addEventListener('click', function () {
