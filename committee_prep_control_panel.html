@@ -42,10 +42,64 @@
       outline: 2px solid rgb(95 184 138);
       outline-offset: 0;
     }
+    .app-nav-btn.app-nav-active {
+      border-color: rgb(95 184 138);
+      background-color: rgb(227 244 235);
+    }
   </style>
 </head>
 <body class="min-h-screen bg-panel-bg text-stone-800 antialiased">
-  <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-8">
+  <div id="app-root" class="app-shell flex min-h-screen w-full">
+    <aside
+      id="app-sidebar"
+      class="fixed left-0 top-0 z-50 flex h-full w-64 -translate-x-full flex-col border-r border-panel-border bg-white transition-transform duration-200 ease-out lg:static lg:z-0 lg:translate-x-0 lg:shadow-none"
+      role="navigation"
+      aria-label="アプリメニュー"
+    >
+      <div class="border-b border-gray-200 bg-panel-surface/90 p-4">
+        <p class="text-xs font-medium text-stone-500">委員会準備</p>
+        <p class="text-sm font-semibold text-stone-800">コントロールパネル</p>
+      </div>
+      <nav class="flex flex-1 flex-col gap-1 p-3" aria-label="表示切替">
+        <button
+          type="button"
+          class="app-nav-btn app-nav-active w-full rounded border border-panel-border bg-panel-surface px-3 py-2.5 text-left text-sm font-medium text-stone-800 transition hover:bg-panel-accentMuted"
+          data-app-nav="dashboard"
+        >
+          <span class="mr-1.5" aria-hidden="true">🏠</span>ダッシュボード
+        </button>
+        <button
+          type="button"
+          class="app-nav-btn w-full rounded border border-gray-200 bg-white px-3 py-2.5 text-left text-sm font-medium text-stone-700 transition hover:bg-panel-accentMuted"
+          data-app-nav="settings"
+        >
+          <span class="mr-1.5" aria-hidden="true">⚙</span>事業者設定
+        </button>
+      </nav>
+    </aside>
+    <div
+      id="app-sidebar-scrim"
+      class="fixed inset-0 z-40 hidden cursor-pointer bg-stone-900/40 lg:hidden"
+      role="button"
+      tabindex="-1"
+      aria-label="メニューを閉じる"
+    ></div>
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div class="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-200 bg-white px-3 py-2 shadow-sm lg:hidden">
+        <button
+          type="button"
+          id="btn-hamburger"
+          class="rounded border border-gray-200 p-2 text-stone-800 hover:bg-panel-accentMuted"
+          aria-label="メニューを開く"
+          aria-expanded="false"
+          aria-controls="app-sidebar"
+        >
+          <span class="text-lg leading-none" aria-hidden="true">☰</span>
+        </button>
+        <span id="app-mobile-title" class="text-sm font-semibold text-stone-800">ダッシュボード</span>
+      </div>
+      <div class="mx-auto w-full max-w-4xl flex-1 overflow-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div id="view-dashboard" class="space-y-0">
     <!-- ヘッダー塊 -->
     <header class="mb-8 rounded border border-gray-200 bg-white p-6 shadow-sm">
       <p class="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500" id="page-product-label">
@@ -91,7 +145,7 @@
           Step 1 — 委員会メンバー選出
         </h2>
         <p class="mb-4 text-sm text-stone-600">
-          氏名は登録職員データからドロップダウンで選択すると、職種・肩書が自動表示されます。外部委員の氏名は自由入力（肩書は登録マスタに照合して自動表示、未登録時は案内文を表示）。
+          氏名は事業者設定の従業者データからドロップダウンで選択すると、職種が自動表示されます。外部委員の氏名は自由入力（肩書は登録マスタに照合して自動表示、未登録時は案内文を表示）。
         </p>
         <div class="overflow-x-auto rounded border border-gray-200 bg-white">
           <table class="w-full min-w-[520px] border-collapse text-sm">
@@ -182,6 +236,20 @@
         <p class="mb-4 text-sm text-stone-600">
           自事業所の気になることを記入し、AIのテーマ案から議案を1件選んでください（事業所単位・共通）。虐待防止研修のテーマ案もここでまとめて扱います。
         </p>
+        <div
+          id="step2-ai-config-banner"
+          class="mb-6 rounded border border-panel-border bg-panel-surface/90 p-4 text-sm text-stone-700"
+        >
+          <p class="mb-1 text-xs font-semibold text-stone-500">事業者設定（AI）からの反映</p>
+          <p class="text-xs text-stone-600">
+            使用AI: <span id="step2-display-ai-provider" class="font-mono">—</span>
+            <span class="mx-2 text-stone-300">|</span>
+            事業所: <span id="step2-display-facility" class="font-medium text-stone-800">—</span>
+          </p>
+          <p class="mt-2 text-xs text-stone-500" id="step2-prompt-hint" aria-live="polite">
+            テーマ案は以下の方針に基づき補完されます（デモ）。
+          </p>
+        </div>
         <div class="mb-6 flex flex-col gap-2 rounded border border-gray-200 bg-white p-4">
           <label class="text-sm font-medium text-stone-800" for="field-step2-situation-text">
             自事業所の気になること
@@ -405,17 +473,579 @@
         </div>
       </div>
     </form>
+        </div>
+
+        <div id="view-settings" class="hidden">
+          <header class="mb-8">
+            <h1 class="text-xl font-bold text-stone-900 sm:text-2xl">事業者設定</h1>
+            <p class="mt-2 text-sm text-stone-600">表示のみのパネルです。編集は各セクションの「EDIT」から行ってください（管理パスワードが必要です）。</p>
+          </header>
+          <div class="flex flex-col gap-6">
+            <section class="panel-card p-5 shadow-sm">
+              <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <h2 class="text-lg font-semibold text-stone-900">事業所情報</h2>
+                <button
+                  type="button"
+                  class="edit-gated rounded border-2 border-panel-accent bg-white px-4 py-1.5 text-xs font-bold uppercase text-panel-accent"
+                  data-edit-section="facility"
+                >
+                  EDIT
+                </button>
+              </div>
+              <dl class="grid gap-2 text-sm sm:grid-cols-2" id="settings-display-facility"></dl>
+            </section>
+            <section class="panel-card p-5 shadow-sm">
+              <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <h2 class="text-lg font-semibold text-stone-900">運営母体情報</h2>
+                <button
+                  type="button"
+                  class="edit-gated rounded border-2 border-panel-accent bg-white px-4 py-1.5 text-xs font-bold uppercase text-panel-accent"
+                  data-edit-section="operator"
+                >
+                  EDIT
+                </button>
+              </div>
+              <dl class="grid gap-2 text-sm sm:grid-cols-2" id="settings-display-operator"></dl>
+            </section>
+            <section class="panel-card p-5 shadow-sm">
+              <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <h2 class="text-lg font-semibold text-stone-900">AI設定</h2>
+                <button
+                  type="button"
+                  class="edit-gated rounded border-2 border-panel-accent bg-white px-4 py-1.5 text-xs font-bold uppercase text-panel-accent"
+                  data-edit-section="ai"
+                >
+                  EDIT
+                </button>
+              </div>
+              <dl class="grid gap-2 text-sm" id="settings-display-ai"></dl>
+            </section>
+            <section class="panel-card p-5 shadow-sm">
+              <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <h2 class="text-lg font-semibold text-stone-900">従業者情報</h2>
+                <button
+                  type="button"
+                  class="edit-gated rounded border-2 border-panel-accent bg-white px-4 py-1.5 text-xs font-bold uppercase text-panel-accent"
+                  data-edit-section="employees"
+                >
+                  EDIT
+                </button>
+              </div>
+              <div class="overflow-x-auto rounded border border-gray-200 bg-white" id="settings-display-employees"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-admin-gate"
+    class="fixed inset-0 z-[100] hidden items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="admin-gate-heading"
+  >
+    <div class="absolute inset-0 bg-stone-900/50" data-modal-dismiss="1"></div>
+    <div
+      class="relative z-10 w-full max-w-md rounded border border-gray-200 bg-white p-6 shadow-xl"
+      role="document"
+    >
+      <h3 id="admin-gate-heading" class="mb-2 text-lg font-semibold text-stone-900">管理パスワード</h3>
+      <p class="mb-4 text-sm text-stone-600" id="admin-gate-desc">編集前に本人確認のため、パスワードを入力してください。</p>
+      <div id="admin-gate-verify" class="space-y-3">
+        <div>
+          <label class="mb-1 block text-xs text-stone-500" for="field-admin-pw">パスワード</label>
+          <input
+            id="field-admin-pw"
+            type="password"
+            class="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+            autocomplete="current-password"
+          />
+        </div>
+      </div>
+      <div id="admin-gate-setup" class="mt-3 hidden space-y-3">
+        <div>
+          <label class="mb-1 block text-xs text-stone-500" for="field-admin-pw-new">新しい管理用パスワード（初回保存時）</label>
+          <input
+            id="field-admin-pw-new"
+            type="password"
+            class="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+            autocomplete="new-password"
+          />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs text-stone-500" for="field-admin-pw-new2">パスワード（確認）</label>
+          <input
+            id="field-admin-pw-new2"
+            type="password"
+            class="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded border border-gray-200 bg-white px-4 py-2 text-sm" data-modal-dismiss="1">
+          キャンセル
+        </button>
+        <button type="button" id="btn-admin-gate-ok" class="rounded bg-panel-accent px-4 py-2 text-sm font-medium text-white">
+          続行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-edit-facility"
+    class="fixed inset-0 z-[100] hidden items-center justify-center overflow-y-auto p-4"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="absolute inset-0 bg-stone-900/50" data-modal-dismiss="1"></div>
+    <div
+      class="relative z-10 my-4 w-full max-w-lg rounded border border-gray-200 bg-white p-6 shadow-xl"
+    >
+      <h3 class="mb-4 text-lg font-semibold text-stone-900">事業所情報の編集</h3>
+      <div class="grid gap-3 text-sm">
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-name">名称</label>
+          <input id="mod-fac-name" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-service">サービス種別</label>
+          <input id="mod-fac-service" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-office-no">事業所番号</label>
+          <input id="mod-fac-office-no" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-designated">指定年月日</label>
+          <input id="mod-fac-designated" type="date" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-postal">郵便番号</label>
+          <input id="mod-fac-postal" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-address">所在地</label>
+          <input id="mod-fac-address" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-phone">電話</label>
+          <input id="mod-fac-phone" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-fax">FAX</label>
+          <input id="mod-fac-fax" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-fac-email">メール</label>
+          <input id="mod-fac-email" type="email" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded border border-gray-200 bg-white px-4 py-2 text-sm" data-modal-dismiss="1">
+          閉じる
+        </button>
+        <button type="button" id="btn-save-facility" class="rounded bg-panel-accent px-4 py-2 text-sm font-medium text-white">
+          保存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-edit-operator"
+    class="fixed inset-0 z-[100] hidden items-center justify-center overflow-y-auto p-4"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="absolute inset-0 bg-stone-900/50" data-modal-dismiss="1"></div>
+    <div class="relative z-10 my-4 w-full max-w-lg rounded border border-gray-200 bg-white p-6 shadow-xl">
+      <h3 class="mb-4 text-lg font-semibold text-stone-900">運営母体情報の編集</h3>
+      <div class="grid gap-3 text-sm">
+        <div>
+          <label class="text-xs text-stone-500" for="mod-op-legal">法人名</label>
+          <input id="mod-op-legal" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-op-rep">代表者氏名</label>
+          <input id="mod-op-rep" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-op-addr">所在地</label>
+          <input id="mod-op-addr" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-op-contact">連絡先</label>
+          <input id="mod-op-contact" type="text" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2" />
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded border border-gray-200 bg-white px-4 py-2 text-sm" data-modal-dismiss="1">
+          閉じる
+        </button>
+        <button type="button" id="btn-save-operator" class="rounded bg-panel-accent px-4 py-2 text-sm font-medium text-white">
+          保存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-edit-ai"
+    class="fixed inset-0 z-[100] hidden items-center justify-center overflow-y-auto p-4"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="absolute inset-0 bg-stone-900/50" data-modal-dismiss="1"></div>
+    <div class="relative z-10 my-4 w-full max-w-lg rounded border border-gray-200 bg-white p-6 shadow-xl">
+      <h3 class="mb-4 text-lg font-semibold text-stone-900">AI設定の編集</h3>
+      <div class="grid gap-3 text-sm">
+        <div>
+          <label class="text-xs text-stone-500" for="mod-ai-provider">使用AI</label>
+          <select id="mod-ai-provider" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2">
+            <option value="gemini">Gemini</option>
+            <option value="chatgpt">ChatGPT</option>
+            <option value="claude">Claude</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-ai-key">APIキー</label>
+          <input
+            id="mod-ai-key"
+            type="password"
+            class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2 font-mono"
+            placeholder="未設定"
+            autocomplete="off"
+          />
+        </div>
+        <p class="text-xs text-stone-500">APIキーは端末内の localStorage に保存されます。共有端末ではご注意ください。</p>
+        <div>
+          <label class="text-xs text-stone-500" for="mod-ai-prompt">Step2 用システム方針（補完テキスト）</label>
+          <textarea
+            id="mod-ai-prompt"
+            rows="3"
+            class="mt-0.5 w-full rounded border border-gray-200 px-2 py-2"
+          ></textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded border border-gray-200 bg-white px-4 py-2 text-sm" data-modal-dismiss="1">
+          閉じる
+        </button>
+        <button type="button" id="btn-save-ai" class="rounded bg-panel-accent px-4 py-2 text-sm font-medium text-white">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-edit-employees"
+    class="fixed inset-0 z-[100] hidden items-center justify-center overflow-y-auto p-4"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="absolute inset-0 bg-stone-900/50" data-modal-dismiss="1"></div>
+    <div
+      class="relative z-10 my-4 w-full max-w-2xl rounded border border-gray-200 bg-white p-6 shadow-xl"
+    >
+      <h3 class="mb-4 text-lg font-semibold text-stone-900">従業者情報の編集</h3>
+      <p class="mb-4 text-xs text-stone-500">初回の保存は管理用パスワードの設定を含みます。保存後、Step1 の職員選択に反映されます。</p>
+      <div id="modal-employees-list" class="mb-4 max-h-64 space-y-2 overflow-y-auto text-sm"></div>
+      <div class="rounded border border-panel-border bg-panel-surface/80 p-4 text-sm" id="modal-employee-form">
+        <p class="mb-2 text-xs font-semibold text-stone-700">従業者の追加 / 上書き</p>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-id">ID（内部）</label>
+            <input id="mod-emp-id" type="text" class="w-full rounded border border-gray-200 px-2 py-1" readonly />
+          </div>
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-name">氏名</label>
+            <input id="mod-emp-name" type="text" class="w-full rounded border border-gray-200 px-2 py-1" />
+          </div>
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-yomi">よみがな</label>
+            <input id="mod-emp-yomi" type="text" class="w-full rounded border border-gray-200 px-2 py-1" />
+          </div>
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-job">職種</label>
+            <input id="mod-emp-job" type="text" class="w-full rounded border border-gray-200 px-2 py-1" />
+          </div>
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-birth">生年月日</label>
+            <input id="mod-emp-birth" type="date" class="w-full rounded border border-gray-200 px-2 py-1" />
+          </div>
+          <div>
+            <label class="text-xs text-stone-500" for="mod-emp-hire">入社年月日</label>
+            <input id="mod-emp-hire" type="date" class="w-full rounded border border-gray-200 px-2 py-1" />
+          </div>
+        </div>
+        <div class="mt-2">
+          <label class="text-xs text-stone-500" for="mod-emp-address">住所</label>
+          <input id="mod-emp-address" type="text" class="w-full rounded border border-gray-200 px-2 py-1" />
+        </div>
+        <div class="mt-2">
+          <label class="text-xs text-stone-500" for="mod-emp-employment">雇用形態</label>
+          <select id="mod-emp-employment" class="mt-0.5 w-full rounded border border-gray-200 px-2 py-1">
+            <option value="full">正社員</option>
+            <option value="part">パート</option>
+          </select>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button type="button" id="btn-emp-form-clear" class="rounded border border-gray-200 bg-white px-3 py-1.5 text-xs">クリア</button>
+          <button type="button" id="btn-emp-form-upsert" class="rounded bg-panel-accent px-3 py-1.5 text-xs text-white">一覧に取り込む</button>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded border border-gray-200 bg-white px-4 py-2 text-sm" data-modal-dismiss="1">
+          閉じる
+        </button>
+        <button type="button" id="btn-save-employees" class="rounded bg-panel-accent px-4 py-2 text-sm font-medium text-white">保存</button>
+      </div>
+    </div>
   </div>
 
   <script>
     (function () {
-      /** 登録職員マスタ（value 選択時に職種・肩書を自動表示） */
-      const STAFF_MASTER = [
-        { value: '', label: '選択してください', title: '' },
-        { value: 'staff-001', label: '山田 太郎', title: '施設長' },
-        { value: 'staff-002', label: '佐藤 花子', title: 'ソーシャルワーカー' },
-        { value: 'staff-003', label: '鈴木 一郎', title: 'サービス管理責任者' },
-      ];
+      const LS_KEY_CONFIG = 'committeePrep_appConfig';
+      const LS_KEY_PW = 'committeePrep_adminPwHash';
+
+      function defaultAppConfig() {
+        return {
+          facility: {
+            name: 'ワークショップひとふし',
+            serviceType: '就労継続支援B型事業所',
+            officeNumber: '',
+            designatedDate: '',
+            postalCode: '',
+            address: '',
+            phone: '',
+            fax: '',
+            email: '',
+          },
+          operator: {
+            legalName: '',
+            representative: '',
+            address: '',
+            contact: '',
+          },
+          ai: { provider: 'gemini', apiKey: '' },
+          step2: {
+            aiSystemPrompt: '自事業所の状況に基づき、虐待防止委員会向けのテーマ案を簡潔に提案する。',
+          },
+          employees: [
+            {
+              id: 'e-seed-1',
+              name: '山田 太郎',
+              yomi: 'やまだ たろう',
+              job: '施設長',
+              birth: '',
+              hireDate: '',
+              address: '',
+              employment: 'full',
+            },
+            {
+              id: 'e-seed-2',
+              name: '佐藤 花子',
+              yomi: 'さとう はなこ',
+              job: 'ソーシャルワーカー',
+              birth: '',
+              hireDate: '',
+              address: '',
+              employment: 'part',
+            },
+            {
+              id: 'e-seed-3',
+              name: '鈴木 一郎',
+              yomi: 'すずき いちろう',
+              job: 'サービス管理責任者',
+              birth: '',
+              hireDate: '',
+              address: '',
+              employment: 'full',
+            },
+          ],
+        };
+      }
+
+      var appConfig = defaultAppConfig();
+
+      function loadAppConfig() {
+        try {
+          const raw = localStorage.getItem(LS_KEY_CONFIG);
+          if (!raw) {
+            appConfig = defaultAppConfig();
+            return;
+          }
+          const b = defaultAppConfig();
+          const p = JSON.parse(raw);
+          appConfig = b;
+          if (p.facility) appConfig.facility = Object.assign({}, b.facility, p.facility);
+          if (p.operator) appConfig.operator = Object.assign({}, b.operator, p.operator);
+          if (p.ai) appConfig.ai = Object.assign({}, b.ai, p.ai);
+          if (p.step2) appConfig.step2 = Object.assign({}, b.step2, p.step2);
+          if (Array.isArray(p.employees) && p.employees.length) appConfig.employees = p.employees;
+        } catch (e) {
+          appConfig = defaultAppConfig();
+        }
+      }
+
+      function applyHeaderAndWizardMeta() {
+        const f = appConfig.facility || {};
+        const fn = document.getElementById('field-meta-facility-name');
+        const fs = document.getElementById('field-meta-service-type');
+        if (fn) fn.value = f.name != null ? f.name : '';
+        if (fs) fs.value = f.serviceType != null ? f.serviceType : '';
+        const pt = document.getElementById('page-title');
+        if (pt) {
+          const n = (f.name || '').trim() || '事業所未設定';
+          pt.textContent = '2026 虐待防止委員会 開催準備 — ' + n;
+        }
+        if (typeof window !== 'undefined') {
+          window.appConfig = appConfig;
+        }
+      }
+
+      var AI_PROV_LABELS = { gemini: 'Gemini', chatgpt: 'ChatGPT', claude: 'Claude' };
+
+      function applyStep2AiBanner() {
+        const prov = (appConfig.ai && appConfig.ai.provider) || '';
+        const el = document.getElementById('step2-display-ai-provider');
+        if (el) el.textContent = AI_PROV_LABELS[prov] || prov || '—';
+        const fc = document.getElementById('step2-display-facility');
+        if (fc) {
+          const n = (appConfig.facility && appConfig.facility.name) || '';
+          fc.textContent = n || '—';
+        }
+        const hint = document.getElementById('step2-prompt-hint');
+        const sp = (appConfig.step2 && appConfig.step2.aiSystemPrompt) || '';
+        if (hint) {
+          const short = sp.length > 200 ? sp.slice(0, 200) + '…' : sp;
+          hint.textContent = '補完方針: ' + (short || '（事業者設定の AI から未入力）');
+        }
+      }
+
+      function renderSettingsDisplays() {
+        const f = appConfig.facility || {};
+        const o = appConfig.operator || {};
+        const a = appConfig.ai || {};
+        const emps = appConfig.employees || [];
+
+        const dFac = document.getElementById('settings-display-facility');
+        if (dFac) {
+          dFac.innerHTML = [
+            ['名称', f.name],
+            ['サービス種別', f.serviceType],
+            ['事業所番号', f.officeNumber],
+            ['指定年月日', f.designatedDate],
+            ['郵便番号', f.postalCode],
+            ['所在地', f.address],
+            ['電話', f.phone],
+            ['FAX', f.fax],
+            ['メール', f.email],
+          ]
+            .map(function (row) {
+              return (
+                '<div class="border-b border-gray-100 py-1 sm:col-span-1"><span class="text-stone-500">' +
+                escapeHtml(row[0]) +
+                '</span></div><div class="border-b border-gray-100 py-1"><span class="text-stone-800">' +
+                (row[1] ? escapeHtml(row[1]) : '—') +
+                '</span></div>'
+              );
+            })
+            .join('');
+        }
+
+        const dOp = document.getElementById('settings-display-operator');
+        if (dOp) {
+          dOp.innerHTML = [
+            ['法人名', o.legalName],
+            ['代表者氏名', o.representative],
+            ['所在地', o.address],
+            ['連絡先', o.contact],
+          ]
+            .map(function (row) {
+              return (
+                '<div class="border-b border-gray-100 py-1"><span class="text-stone-500">' +
+                escapeHtml(row[0]) +
+                '</span></div><div class="border-b border-gray-100 py-1"><span class="text-stone-800">' +
+                (row[1] ? escapeHtml(row[1]) : '—') +
+                '</span></div>'
+              );
+            })
+            .join('');
+        }
+
+        const dAi = document.getElementById('settings-display-ai');
+        if (dAi) {
+          const pl = AI_PROV_LABELS[a.provider] || a.provider || '—';
+          const masked = a.apiKey && String(a.apiKey).length ? '••••••••••••' : '（未設定）';
+          dAi.innerHTML =
+            '<div class="border-b border-gray-100 py-1"><span class="text-stone-500">使用AI</span></div><div class="border-b border-gray-100 py-1"><span class="text-stone-800">' +
+            escapeHtml(pl) +
+            '</span></div>' +
+            '<div class="border-b border-gray-100 py-1"><span class="text-stone-500">APIキー</span></div><div class="border-b border-gray-100 py-1 font-mono text-stone-800">' +
+            masked +
+            '</div>';
+        }
+
+        const dE = document.getElementById('settings-display-employees');
+        if (dE) {
+          if (!emps.length) {
+            dE.innerHTML = '<p class="p-3 text-sm text-stone-500">（従業者が未登録です）</p>';
+          } else {
+            dE.innerHTML =
+              '<table class="w-full min-w-[280px] border-collapse text-sm"><thead><tr class="bg-panel-surface text-left text-stone-600">' +
+              '<th class="border-b p-2">氏名</th><th class="border-b p-2">職種</th></tr></thead><tbody>' +
+              emps
+                .map(function (e) {
+                  return (
+                    '<tr class="border-b border-gray-100"><td class="p-2">' +
+                    escapeHtml(e.name) +
+                    '</td><td class="p-2">' +
+                    escapeHtml(e.job) +
+                    '</td></tr>'
+                  );
+                })
+                .join('') +
+              '</tbody></table>';
+          }
+        }
+      }
+
+      function saveAppConfig() {
+        try {
+          localStorage.setItem(LS_KEY_CONFIG, JSON.stringify(appConfig));
+        } catch (e) {}
+        applyHeaderAndWizardMeta();
+        applyStep2AiBanner();
+        renderSettingsDisplays();
+        refreshAllStaffSelects();
+      }
+
+      async function hashPassword(plain) {
+        const buf = new TextEncoder().encode(plain);
+        const digest = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(digest))
+          .map(function (b) {
+            return b.toString(16).padStart(2, '0');
+          })
+          .join('');
+      }
+
+      function getPasswordHash() {
+        return localStorage.getItem(LS_KEY_PW) || '';
+      }
+
+      function getStaffOptionsForSelect() {
+        const o = [{ value: '', label: '選択してください', title: '' }];
+        (appConfig.employees || []).forEach(function (e) {
+          if (!e || !e.id) return;
+          o.push({ value: e.id, label: e.name || '（無名）', title: e.job || '' });
+        });
+        return o;
+      }
 
       /** 外部委員名の正規化キー → 肩書（自由入力氏名の照合用デモデータ） */
       const EXTERNAL_TITLE_BY_KEY = {
@@ -489,7 +1119,7 @@
       }
 
       function staffTitleByValue(value) {
-        const row = STAFF_MASTER.find(function (o) {
+        const row = getStaffOptionsForSelect().find(function (o) {
           return o.value === value;
         });
         return row ? row.title : '';
@@ -497,7 +1127,7 @@
 
       function fillSelect(selectEl) {
         selectEl.innerHTML = '';
-        STAFF_MASTER.forEach(function (opt) {
+        getStaffOptionsForSelect().forEach(function (opt) {
           const o = document.createElement('option');
           o.value = opt.value;
           o.textContent = opt.label;
@@ -513,11 +1143,48 @@
       function bindStaffSelectToTitle(selectEl, titleInputId) {
         const titleEl = document.getElementById(titleInputId);
         if (!titleEl) return;
-        const handler = function () {
+        selectEl.onchange = function () {
           syncTitleFromStaffSelect(selectEl, titleEl);
         };
-        selectEl.addEventListener('change', handler);
-        handler();
+        syncTitleFromStaffSelect(selectEl, titleEl);
+      }
+
+      function refreshAllStaffSelects() {
+        const chair = document.getElementById('field-step1-chair-name');
+        const manager = document.getElementById('field-step1-manager-name');
+        if (!chair || !manager) return;
+        const prevC = chair.value;
+        const prevM = manager.value;
+        const ids = getStaffOptionsForSelect()
+          .filter(function (o) {
+            return o.value;
+          })
+          .map(function (o) {
+            return o.value;
+          });
+        fillSelect(chair);
+        fillSelect(manager);
+        function pick(fallback) {
+          return ids.length ? ids[Math.min(fallback, ids.length - 1)] : '';
+        }
+        chair.value = ids.indexOf(prevC) >= 0 ? prevC : pick(0);
+        manager.value = ids.indexOf(prevM) >= 0 ? prevM : pick(1);
+        if (chair.value && manager.value === chair.value && ids.length > 1) {
+          const alt = ids.filter(function (id) {
+            return id !== chair.value;
+          })[0];
+          if (alt) manager.value = alt;
+        }
+        syncTitleFromStaffSelect(chair, document.getElementById('field-step1-chair-title'));
+        syncTitleFromStaffSelect(manager, document.getElementById('field-step1-manager-title'));
+        document.querySelectorAll('#step1-member-tbody tr[data-dynamic-member] select').forEach(function (sel) {
+          const v = sel.value;
+          const tr = sel.closest('tr');
+          const tInp = tr ? tr.querySelector('input[readonly][id$="-title"]') : null;
+          fillSelect(sel);
+          sel.value = ids.indexOf(v) >= 0 ? v : pick(0);
+          if (tInp) syncTitleFromStaffSelect(sel, tInp);
+        });
       }
 
       function resolveExternalTitleDisplay(nameRaw) {
@@ -548,10 +1215,7 @@
       }
 
       function initStaffDropdowns() {
-        fillSelect(document.getElementById('field-step1-chair-name'));
-        fillSelect(document.getElementById('field-step1-manager-name'));
-        document.getElementById('field-step1-chair-name').value = 'staff-001';
-        document.getElementById('field-step1-manager-name').value = 'staff-002';
+        refreshAllStaffSelects();
         bindStaffSelectToTitle(document.getElementById('field-step1-chair-name'), 'field-step1-chair-title');
         bindStaffSelectToTitle(document.getElementById('field-step1-manager-name'), 'field-step1-manager-title');
       }
@@ -809,7 +1473,17 @@
 
       function demoThemeDraftsFromSituation() {
         const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
-        const hint = base ? '（入力メモを反映した想定） ' : '';
+        const fac = (appConfig.facility && appConfig.facility.name) || '自事業所';
+        const prov =
+          (appConfig.ai && appConfig.ai.provider && (AI_PROV_LABELS[appConfig.ai.provider] || appConfig.ai.provider)) || '';
+        const meta =
+          (base ? '（状況メモを踏まえた想定 / ' : '（') + fac + (prov ? ' / AI:' + prov : '') + '）';
+        const hasPrompt = !!(appConfig.step2 && String(appConfig.step2.aiSystemPrompt || '').trim());
+        const hint = base
+          ? meta + ' '
+          : (fac
+              ? '（' + fac + (prov ? ' / ' + prov : '') + (hasPrompt ? ' / 方針反映' : '') + '） '
+              : '');
         document.getElementById('field-step2-theme-text-1').value =
           hint + '身体拘束の適正化と代替手段の共有';
         document.getElementById('field-step2-theme-text-2').value =
@@ -952,6 +1626,355 @@
         }
         renderCalendar();
       });
+
+      function showModal(el) {
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+
+      function hideModal(el) {
+        if (!el) return;
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+
+      var pendingEditSection = null;
+      var workingEmployees = [];
+
+      function setAppView(view) {
+        const dash = document.getElementById('view-dashboard');
+        const set = document.getElementById('view-settings');
+        const isDash = view === 'dashboard';
+        if (dash) dash.classList.toggle('hidden', !isDash);
+        if (set) set.classList.toggle('hidden', isDash);
+        document.querySelectorAll('.app-nav-btn').forEach(function (b) {
+          b.classList.toggle('app-nav-active', b.getAttribute('data-app-nav') === view);
+        });
+        const mt = document.getElementById('app-mobile-title');
+        if (mt) mt.textContent = isDash ? 'ダッシュボード' : '事業者設定';
+      }
+
+      function setMobileSidebarOpen(open) {
+        const sb = document.getElementById('app-sidebar');
+        const scr = document.getElementById('app-sidebar-scrim');
+        const ham = document.getElementById('btn-hamburger');
+        if (window.innerWidth >= 1024) {
+          if (scr) scr.classList.add('hidden');
+          return;
+        }
+        if (!sb) return;
+        if (open) {
+          sb.classList.remove('-translate-x-full');
+          sb.classList.add('translate-x-0');
+          if (scr) scr.classList.remove('hidden');
+          if (ham) ham.setAttribute('aria-expanded', 'true');
+        } else {
+          sb.classList.add('-translate-x-full');
+          sb.classList.remove('translate-x-0');
+          if (scr) scr.classList.add('hidden');
+          if (ham) ham.setAttribute('aria-expanded', 'false');
+        }
+      }
+
+      function openEditForSection(section) {
+        hideModal(document.getElementById('modal-admin-gate'));
+        if (section === 'facility') {
+          const f = appConfig.facility || {};
+          document.getElementById('mod-fac-name').value = f.name != null ? f.name : '';
+          document.getElementById('mod-fac-service').value = f.serviceType != null ? f.serviceType : '';
+          document.getElementById('mod-fac-office-no').value = f.officeNumber != null ? f.officeNumber : '';
+          document.getElementById('mod-fac-designated').value = f.designatedDate || '';
+          document.getElementById('mod-fac-postal').value = f.postalCode != null ? f.postalCode : '';
+          document.getElementById('mod-fac-address').value = f.address != null ? f.address : '';
+          document.getElementById('mod-fac-phone').value = f.phone != null ? f.phone : '';
+          document.getElementById('mod-fac-fax').value = f.fax != null ? f.fax : '';
+          document.getElementById('mod-fac-email').value = f.email != null ? f.email : '';
+          showModal(document.getElementById('modal-edit-facility'));
+        } else if (section === 'operator') {
+          const op = appConfig.operator || {};
+          document.getElementById('mod-op-legal').value = op.legalName != null ? op.legalName : '';
+          document.getElementById('mod-op-rep').value = op.representative != null ? op.representative : '';
+          document.getElementById('mod-op-addr').value = op.address != null ? op.address : '';
+          document.getElementById('mod-op-contact').value = op.contact != null ? op.contact : '';
+          showModal(document.getElementById('modal-edit-operator'));
+        } else if (section === 'ai') {
+          const a = appConfig.ai || {};
+          const s2 = appConfig.step2 || {};
+          document.getElementById('mod-ai-provider').value = a.provider || 'gemini';
+          document.getElementById('mod-ai-key').value = a.apiKey != null ? a.apiKey : '';
+          document.getElementById('mod-ai-prompt').value = s2.aiSystemPrompt != null ? s2.aiSystemPrompt : '';
+          showModal(document.getElementById('modal-edit-ai'));
+        } else if (section === 'employees') {
+          workingEmployees = (appConfig.employees || []).map(function (e) {
+            return Object.assign({}, e);
+          });
+          renderModalEmployeeList();
+          clearEmployeeForm(true);
+          showModal(document.getElementById('modal-edit-employees'));
+        }
+      }
+
+      function clearEmployeeForm(isNew) {
+        document.getElementById('mod-emp-id').value = isNew ? '（新規）' : '';
+        document.getElementById('mod-emp-name').value = '';
+        document.getElementById('mod-emp-yomi').value = '';
+        document.getElementById('mod-emp-job').value = '';
+        document.getElementById('mod-emp-birth').value = '';
+        document.getElementById('mod-emp-hire').value = '';
+        document.getElementById('mod-emp-address').value = '';
+        document.getElementById('mod-emp-employment').value = 'full';
+        if (isNew) {
+          document.getElementById('mod-emp-id').value = '';
+        }
+      }
+
+      function fillEmployeeForm(emp) {
+        document.getElementById('mod-emp-id').value = emp.id;
+        document.getElementById('mod-emp-name').value = emp.name || '';
+        document.getElementById('mod-emp-yomi').value = emp.yomi || '';
+        document.getElementById('mod-emp-job').value = emp.job || '';
+        document.getElementById('mod-emp-birth').value = emp.birth || '';
+        document.getElementById('mod-emp-hire').value = emp.hireDate || '';
+        document.getElementById('mod-emp-address').value = emp.address || '';
+        document.getElementById('mod-emp-employment').value = emp.employment || 'full';
+      }
+
+      function renderModalEmployeeList() {
+        const root = document.getElementById('modal-employees-list');
+        if (!root) return;
+        if (!workingEmployees.length) {
+          root.innerHTML = '<p class="p-2 text-stone-500">まだ1件もありません。下のフォームから追加してください。</p>';
+          return;
+        }
+        function attrId(id) {
+          return String(id || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;');
+        }
+        root.innerHTML = workingEmployees
+          .map(function (e) {
+            return (
+              '<div class="flex flex-wrap items-center justify-between gap-2 rounded border border-gray-200 bg-white p-2">' +
+              '<div><span class="font-medium text-stone-800">' +
+              escapeHtml(e.name) +
+              '</span> <span class="text-stone-500">— ' +
+              escapeHtml(e.job) +
+              '</span></div>' +
+              '<div class="flex gap-1">' +
+              '<button type="button" class="rounded border border-gray-200 px-2 py-1 text-xs" data-emp-edit="' +
+              attrId(e.id) +
+              '">編集</button>' +
+              '<button type="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-700" data-emp-del="' +
+              attrId(e.id) +
+              '">削除</button>' +
+              '</div></div>'
+            );
+          })
+          .join('');
+        root.querySelectorAll('[data-emp-edit]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            const id = b.getAttribute('data-emp-edit');
+            const em = workingEmployees.find(function (x) {
+              return x.id === id;
+            });
+            if (em) fillEmployeeForm(em);
+          });
+        });
+        root.querySelectorAll('[data-emp-del]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            const id = b.getAttribute('data-emp-del');
+            if (!window.confirm('この従業者を一覧から外しますか？')) return;
+            workingEmployees = workingEmployees.filter(function (x) {
+              return x.id !== id;
+            });
+            renderModalEmployeeList();
+          });
+        });
+      }
+
+      function requirePasswordForSection(section) {
+        pendingEditSection = section;
+        const gate = document.getElementById('modal-admin-gate');
+        const v = getPasswordHash();
+        document.getElementById('field-admin-pw').value = '';
+        document.getElementById('field-admin-pw-new').value = '';
+        document.getElementById('field-admin-pw-new2').value = '';
+        document.getElementById('admin-gate-verify').classList.toggle('hidden', !v);
+        document.getElementById('admin-gate-setup').classList.toggle('hidden', !!v);
+        document.getElementById('admin-gate-desc').textContent = v
+          ? '編集前に管理パスワードを入力してください。'
+          : '初回は管理用パスワードを設定してから、編集に進みます。';
+        showModal(gate);
+      }
+
+      document.querySelectorAll('[data-app-nav]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          setAppView(b.getAttribute('data-app-nav') || 'dashboard');
+          setMobileSidebarOpen(false);
+        });
+      });
+
+      const hamburger = document.getElementById('btn-hamburger');
+      if (hamburger) {
+        hamburger.addEventListener('click', function () {
+          const open = hamburger.getAttribute('aria-expanded') !== 'true';
+          setMobileSidebarOpen(open);
+        });
+      }
+      const scr = document.getElementById('app-sidebar-scrim');
+      if (scr) {
+        scr.addEventListener('click', function () {
+          setMobileSidebarOpen(false);
+        });
+      }
+
+      document.querySelectorAll('.edit-gated').forEach(function (b) {
+        b.addEventListener('click', function () {
+          requirePasswordForSection(b.getAttribute('data-edit-section'));
+        });
+      });
+
+      document.querySelectorAll('[data-modal-dismiss]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          const m = e.target.closest('[id^="modal-"]');
+          if (m) hideModal(m);
+        });
+      });
+
+      document.getElementById('btn-admin-gate-ok').addEventListener('click', async function () {
+        const hasPw = getPasswordHash();
+        if (!hasPw) {
+          const a = document.getElementById('field-admin-pw-new').value;
+          const b = document.getElementById('field-admin-pw-new2').value;
+          if (a.length < 4) {
+            alert('管理用パスワードは4文字以上にしてください。');
+            return;
+          }
+          if (a !== b) {
+            alert('パスワードが一致しません。');
+            return;
+          }
+          const h = await hashPassword(a);
+          localStorage.setItem(LS_KEY_PW, h);
+        } else {
+          const p = document.getElementById('field-admin-pw').value;
+          if ((await hashPassword(p)) !== getPasswordHash()) {
+            alert('パスワードが正しくありません。');
+            return;
+          }
+        }
+        if (pendingEditSection) {
+          openEditForSection(pendingEditSection);
+          pendingEditSection = null;
+        }
+      });
+
+      document.getElementById('btn-save-facility').addEventListener('click', function () {
+        appConfig.facility = appConfig.facility || {};
+        appConfig.facility.name = document.getElementById('mod-fac-name').value.trim();
+        appConfig.facility.serviceType = document.getElementById('mod-fac-service').value.trim();
+        appConfig.facility.officeNumber = document.getElementById('mod-fac-office-no').value.trim();
+        appConfig.facility.designatedDate = document.getElementById('mod-fac-designated').value;
+        appConfig.facility.postalCode = document.getElementById('mod-fac-postal').value.trim();
+        appConfig.facility.address = document.getElementById('mod-fac-address').value.trim();
+        appConfig.facility.phone = document.getElementById('mod-fac-phone').value.trim();
+        appConfig.facility.fax = document.getElementById('mod-fac-fax').value.trim();
+        appConfig.facility.email = document.getElementById('mod-fac-email').value.trim();
+        saveAppConfig();
+        hideModal(document.getElementById('modal-edit-facility'));
+      });
+
+      document.getElementById('btn-save-operator').addEventListener('click', function () {
+        appConfig.operator = {
+          legalName: document.getElementById('mod-op-legal').value.trim(),
+          representative: document.getElementById('mod-op-rep').value.trim(),
+          address: document.getElementById('mod-op-addr').value.trim(),
+          contact: document.getElementById('mod-op-contact').value.trim(),
+        };
+        saveAppConfig();
+        hideModal(document.getElementById('modal-edit-operator'));
+      });
+
+      document.getElementById('btn-save-ai').addEventListener('click', function () {
+        appConfig.ai = appConfig.ai || {};
+        appConfig.step2 = appConfig.step2 || {};
+        appConfig.ai.provider = document.getElementById('mod-ai-provider').value;
+        appConfig.ai.apiKey = document.getElementById('mod-ai-key').value;
+        appConfig.step2.aiSystemPrompt = document.getElementById('mod-ai-prompt').value.trim();
+        saveAppConfig();
+        hideModal(document.getElementById('modal-edit-ai'));
+      });
+
+      document.getElementById('btn-emp-form-clear').addEventListener('click', function () {
+        clearEmployeeForm(true);
+      });
+
+      document.getElementById('btn-emp-form-upsert').addEventListener('click', function () {
+        const name = document.getElementById('mod-emp-name').value.trim();
+        if (!name) {
+          alert('氏名を入力してください。');
+          return;
+        }
+        const idRaw = document.getElementById('mod-emp-id').value.trim();
+        var id = idRaw;
+        if (!id || id === '（新規）') {
+          id = 'e-' + Date.now() + '-' + Math.random().toString(16).slice(2, 8);
+        }
+        const row = {
+          id: id,
+          name: name,
+          yomi: document.getElementById('mod-emp-yomi').value.trim(),
+          job: document.getElementById('mod-emp-job').value.trim(),
+          birth: document.getElementById('mod-emp-birth').value,
+          hireDate: document.getElementById('mod-emp-hire').value,
+          address: document.getElementById('mod-emp-address').value.trim(),
+          employment: document.getElementById('mod-emp-employment').value,
+        };
+        const ix = workingEmployees.findIndex(function (e) {
+          return e.id === id;
+        });
+        if (ix >= 0) workingEmployees[ix] = row;
+        else workingEmployees.push(row);
+        renderModalEmployeeList();
+        clearEmployeeForm(true);
+      });
+
+      document.getElementById('btn-save-employees').addEventListener('click', function () {
+        if (!getPasswordHash()) {
+          alert('先に管理パスワードを一度設定・認証が必要です。EDITから開き直してください。');
+          return;
+        }
+        appConfig.employees = workingEmployees.slice();
+        saveAppConfig();
+        hideModal(document.getElementById('modal-edit-employees'));
+      });
+
+      function bindHeaderMetaToConfig() {
+        const fn = document.getElementById('field-meta-facility-name');
+        const st = document.getElementById('field-meta-service-type');
+        if (fn) {
+          fn.addEventListener('change', function () {
+            appConfig.facility = appConfig.facility || {};
+            appConfig.facility.name = fn.value;
+            saveAppConfig();
+          });
+        }
+        if (st) {
+          st.addEventListener('change', function () {
+            appConfig.facility = appConfig.facility || {};
+            appConfig.facility.serviceType = st.value;
+            saveAppConfig();
+          });
+        }
+      }
+      bindHeaderMetaToConfig();
+
+      loadAppConfig();
+      applyHeaderAndWizardMeta();
+      applyStep2AiBanner();
+      renderSettingsDisplays();
 
       initStaffDropdowns();
       addMemberRow();
