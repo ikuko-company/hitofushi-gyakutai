@@ -1492,8 +1492,77 @@
           hint + '利用者の意思尊重を中心とした支援の質向上';
       }
 
+      var GAS_WEBAPP_URL =
+        'https://script.google.com/macros/s/AKfycbyNn15ddUa4YBClaQcxmUv8bPDVV8Nntx7IiRY8l1iU6uwwmgqyg3wtyv0pumF9vGZ0/exec';
+
+      async function requestThemesFromGas() {
+        const btn = document.getElementById('btn-step2-theme-create');
+        if (btn) {
+          btn.disabled = true;
+        }
+        const facilityName = (appConfig.facility && appConfig.facility.name) || '';
+        const serviceType = (appConfig.facility && appConfig.facility.serviceType) || '';
+        const situation = val('field-step2-situation-text');
+        const systemPrompt = (appConfig.step2 && appConfig.step2.aiSystemPrompt) || '';
+        const apiKey = (appConfig.ai && appConfig.ai.apiKey) || '';
+
+        const payload = {
+          action: 'generateThemes',
+          facilityName: facilityName,
+          serviceType: serviceType,
+          situation: situation,
+          systemPrompt: systemPrompt,
+        };
+        if (apiKey) {
+          payload.apiKey = apiKey;
+        }
+
+        try {
+          const r = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            mode: 'cors',
+          });
+          const t = await r.text();
+          var data;
+          try {
+            data = JSON.parse(t);
+          } catch (err) {
+            throw new Error('GAS 応答を JSON として解釈できません。Web アプリ再デプロイと CORS を確認してください: ' + t.slice(0, 200));
+          }
+          if (!data || !data.ok) {
+            throw new Error((data && data.error) || 'テーマ案の取得に失敗');
+          }
+          if (!data.themes || data.themes.length < 3) {
+            throw new Error('テーマ案が3件揃いません。');
+          }
+          const prov =
+            (appConfig.ai && appConfig.ai.provider && (AI_PROV_LABELS[appConfig.ai.provider] || appConfig.ai.provider)) || '';
+          const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
+          const fac = facilityName || '自事業所';
+          const meta = base
+            ? '（' + fac + (prov ? ' / ' + prov : '') + ' / GAS+Gemini） '
+            : '（' + fac + (prov ? ' / ' + prov : '') + ' / GAS+Gemini） ';
+          document.getElementById('field-step2-theme-text-1').value = meta + data.themes[0];
+          document.getElementById('field-step2-theme-text-2').value = meta + data.themes[1];
+          document.getElementById('field-step2-theme-text-3').value = meta + data.themes[2];
+          const r1 = document.getElementById('field-step2-theme-draft-1');
+          if (r1) {
+            r1.checked = true;
+          }
+        } catch (e) {
+          alert('GAS からの取得に失敗: ' + e + '\n\nローカル（デモ）の仮案に切り替えます。');
+          demoThemeDraftsFromSituation();
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+          }
+        }
+      }
+
       document.getElementById('btn-step2-theme-create').addEventListener('click', function () {
-        demoThemeDraftsFromSituation();
+        requestThemesFromGas();
       });
 
       document.getElementById('btn-step4-create-draft-summary').addEventListener('click', function () {
@@ -1984,9 +2053,6 @@
       goToStepIndex(0);
 
       window.testLine = async function testLine() {
-        const gasUrl =
-          'https://script.google.com/macros/s/AKfycbwS-c6FcAFx8War_6vIyPFKjDyLvdJcfWjWMxjN-U4wI5l-Hq2j-d71RE-MebI97Q69/exec';
-
         // 1. calendarStateから直接、選択された日時を組み立てる
         const selKey = Object.keys(calendarState.selections)[0];
         let selectedDate = '日付未選択';
@@ -1997,8 +2063,8 @@
         }
 
         try {
-          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る）
-          await fetch(gasUrl, {
+          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る。LINE 用は従来どおり { date }）
+          await fetch(GAS_WEBAPP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
