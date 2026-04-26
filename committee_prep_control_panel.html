@@ -348,6 +348,10 @@
           </div>
           <p class="text-sm font-semibold text-stone-800" id="field-step5-calendar-month-label" aria-live="polite"></p>
         </div>
+        <p class="mb-3 text-sm text-stone-700" aria-live="polite">
+          <span class="font-medium text-stone-800">LINE送信で送る日時</span>
+          <span id="selected-date-display" class="ml-2 font-mono text-stone-900">未設定</span>
+        </p>
         <input type="hidden" id="field-step5-calendar-year" value="" />
         <input type="hidden" id="field-step5-calendar-month-index" value="" />
         <div class="overflow-x-auto rounded border border-gray-200 bg-white p-4">
@@ -393,7 +397,7 @@
           </button>
           <button
             type="button"
-            id="btn-wizard-final-determine"
+            id="btn-step6-submit"
             class="hidden rounded border-2 border-red-500 bg-white px-8 py-4 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
           >
             決定
@@ -444,6 +448,21 @@
         if (calendarState.selections[key]) {
           calendarState.selections[key].time = String(timeValue || '');
         }
+        syncSelectedDateDisplay();
+      }
+
+      /** Step 5 の選択を #selected-date-display に反映（LINE送信の date 元） */
+      function syncSelectedDateDisplay() {
+        const el = document.getElementById('selected-date-display');
+        if (!el) return;
+        const key = calendarSelectedDateKey();
+        if (!key) {
+          el.textContent = '未設定';
+          return;
+        }
+        const row = calendarState.selections[key];
+        const t = row && String(row.time || '').trim();
+        el.textContent = t ? key + ' ' + t : key;
       }
 
       function formatCalendarSlotForConfirm(key) {
@@ -629,7 +648,7 @@
 
         const isConfirm = stepKey === 'confirm';
         document.getElementById('btn-wizard-next').classList.toggle('hidden', isConfirm);
-        document.getElementById('btn-wizard-final-determine').classList.toggle('hidden', !isConfirm);
+        document.getElementById('btn-step6-submit').classList.toggle('hidden', !isConfirm);
         document.getElementById('btn-wizard-back').disabled = currentStepIndex === 0;
 
         if (isConfirm) renderSummary();
@@ -788,10 +807,6 @@
         if (currentStepIndex < stepOrder.length - 1) goToStepIndex(currentStepIndex + 1);
       });
 
-      document.getElementById('btn-wizard-final-determine').addEventListener('click', function () {
-        alert('決定しました（デモ）。実装時はAPIへ送信します。');
-      });
-
       function demoThemeDraftsFromSituation() {
         const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
         const hint = base ? '（入力メモを反映した想定） ' : '';
@@ -918,6 +933,7 @@
 
           mountTimeInput();
         }
+        syncSelectedDateDisplay();
       }
 
       document.getElementById('btn-step5-calendar-prev-month').addEventListener('click', function () {
@@ -943,33 +959,43 @@
       addExternalRow();
       renderCalendar();
       goToStepIndex(0);
-     })();
-  </script>
-  <script>
-    async function testLine() {
-      // ここに発行済みのURLを貼り付けてください
-      const gasUrl = "https://script.google.com/macros/s/AKfycbxJMNSS7G1VE5BVwPMu2pbdI-nd9EDeloCbwd3Nb-xsTnSidEJdUGmyEqohhKFkfM20/exec";
-      
-      try {
-        await fetch(gasUrl, {
-          method: "POST",
-          mode: "no-cors"
-        });
-        alert("LINEに送信指示を出しました！スマホを確認してください。");
-      } catch (e) {
-        alert("エラーが発生しました: " + e);
-      }
-    }
-  
-    // 画面が読み込まれたら、決定ボタンにこの機能を結びつける
-    window.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('btn-wizard-final-determine');
-      if (btn) {
-        btn.addEventListener('click', testLine);
-      } else {
-        console.error("決定ボタンが見つかりません。idを確認してください。");
-      }
-    });
+
+      window.testLine = async function testLine() {
+        const gasUrl =
+          'https://script.google.com/macros/s/AKfycbwS-c6FcAFx8War_6vIyPFKjDyLvdJcfWjWMxjN-U4wI5l-Hq2j-d71RE-MebI97Q69/exec';
+
+        // 1. calendarStateから直接、選択された日時を組み立てる
+        const selKey = Object.keys(calendarState.selections)[0];
+        let selectedDate = '日付未選択';
+
+        if (selKey) {
+          const detail = calendarState.selections[selKey];
+          selectedDate = selKey + (detail.time ? ' ' + detail.time : ' (時間未設定)');
+        }
+
+        try {
+          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る）
+          await fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ date: selectedDate }),
+          });
+
+          alert(
+            '「' +
+              selectedDate +
+              '」の開催案内をLINEに送信指示しました！\nスマホを確認してください。',
+          );
+        } catch (e) {
+          alert('エラーが発生しました: ' + e);
+        }
+      };
+
+      document.getElementById('btn-step6-submit').addEventListener('click', function () {
+        window.testLine();
+      });
+    })();
   </script>
 </body>
 </html>
