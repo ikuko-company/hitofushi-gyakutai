@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>虐待防止委員会 出欠のご回答</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            panel: {
+              bg: '#f0faf4',
+              surface: '#f7fcf9',
+              border: '#cfe8d8',
+              accent: '#5fb88a',
+              accentMuted: '#e3f4eb',
+            },
+          },
+          fontFamily: {
+            sans: ['"Meiryo UI"', 'Meiryo', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .panel-card {
+      border: 1px solid rgb(207 232 216);
+      background-color: rgb(247 252 249);
+      border-radius: 0.25rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-panel-bg text-stone-800 antialiased">
+  <main class="mx-auto max-w-md px-4 py-6 pb-10 sm:px-5">
+    <!-- ヘッダー -->
+    <header class="panel-card mb-6 p-5 shadow-sm">
+      <h1 class="text-lg font-semibold leading-snug text-stone-900 sm:text-xl">
+        虐待防止委員会 出欠のご回答
+      </h1>
+      <p class="mt-3 text-sm leading-relaxed text-stone-600">
+        以下のフォームより、出欠をご回答ください。
+      </p>
+    </header>
+
+    <!-- 開催日時（?date= URLパラメータで上書き） -->
+    <section class="panel-card mb-6 p-4 shadow-sm" aria-labelledby="datetime-label">
+      <h2 id="datetime-label" class="sr-only">開催予定日時</h2>
+      <p class="text-sm font-medium text-stone-800">
+        <span class="text-stone-500">開催予定日時</span>
+        <span id="display-datetime" class="mt-1 block font-mono text-base text-stone-900">2026年5月15日 14:00</span>
+      </p>
+    </section>
+
+    <!-- フォーム -->
+    <form id="attendance-form" class="panel-card p-5 shadow-sm" novalidate>
+      <div class="flex flex-col gap-6">
+        <!-- 氏名 -->
+        <div class="flex flex-col gap-2">
+          <label for="field-name" class="text-sm font-medium text-stone-800">
+            氏名<span class="ml-1 text-red-600" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="field-name"
+            name="name"
+            type="text"
+            required
+            autocomplete="name"
+            placeholder="山田 太郎"
+            class="min-h-[3rem] w-full rounded border border-gray-200 bg-white px-3 py-3 text-base text-stone-800 placeholder:text-stone-400 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+          />
+        </div>
+
+        <!-- 出欠 -->
+        <fieldset class="flex flex-col gap-3 border-0 p-0">
+          <legend class="text-sm font-medium text-stone-800">
+            出欠<span class="ml-1 text-red-600" aria-hidden="true">*</span>
+          </legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label
+              class="relative block cursor-pointer select-none rounded border-2 border-gray-200 bg-white transition hover:border-panel-accent/60 hover:bg-panel-accentMuted/40 has-[:checked]:border-panel-accent has-[:checked]:bg-panel-accentMuted has-[:checked]:shadow-sm"
+            >
+              <input
+                type="radio"
+                name="attendance"
+                value="present"
+                required
+                class="peer sr-only"
+              />
+              <span
+                class="flex min-h-[3.5rem] items-center justify-center px-3 py-3 text-center text-base font-semibold text-stone-800 peer-focus-visible:ring-2 peer-focus-visible:ring-panel-accent peer-focus-visible:ring-offset-2"
+              >
+                出席
+              </span>
+            </label>
+            <label
+              class="relative block cursor-pointer select-none rounded border-2 border-gray-200 bg-white transition hover:border-panel-accent/60 hover:bg-panel-accentMuted/40 has-[:checked]:border-panel-accent has-[:checked]:bg-panel-accentMuted has-[:checked]:shadow-sm"
+            >
+              <input type="radio" name="attendance" value="absent" class="peer sr-only" />
+              <span
+                class="flex min-h-[3.5rem] items-center justify-center px-3 py-3 text-center text-base font-semibold text-stone-800 peer-focus-visible:ring-2 peer-focus-visible:ring-panel-accent peer-focus-visible:ring-offset-2"
+              >
+                欠席
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- 備考 -->
+        <div class="flex flex-col gap-2">
+          <label for="field-note" class="text-sm font-medium text-stone-800">
+            備考<span class="ml-1 text-xs font-normal text-stone-500">（任意）</span>
+          </label>
+          <p class="text-xs text-stone-500">欠席時の共有事項や質問など</p>
+          <textarea
+            id="field-note"
+            name="note"
+            rows="4"
+            class="w-full resize-y rounded border border-gray-200 bg-white px-3 py-3 text-base text-stone-800 placeholder:text-stone-400 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+            placeholder="ご記入いただければ結構です。"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          id="btn-submit"
+          class="mt-2 min-h-[3.25rem] w-full rounded border-2 border-red-400 bg-white py-3.5 text-base font-semibold text-red-600 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          回答を送信する
+        </button>
+      </div>
+    </form>
+
+    <section
+      id="completion-panel"
+      class="panel-card mb-6 hidden p-8 text-center shadow-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <p class="text-base font-semibold text-stone-900">ご回答ありがとうございました。</p>
+    </section>
+
+    <div
+      id="status-message"
+      class="mt-4 min-h-[1.5rem] px-1 text-center text-sm text-stone-600"
+      role="status"
+      aria-live="polite"
+    ></div>
+  </main>
+
+  <script>
+    (function () {
+      const GAS_WEBAPP_URL =
+        'https://script.google.com/macros/s/AKfycbwRxmT7rRZuEArudKFSGwweULh5m4nITr3v_Kdq3KopV1RG6TB7gEkY8FDLD5jtaOWy/exec';
+
+      const BTN_LABEL_IDLE = '回答を送信する';
+      const BTN_LABEL_SENDING = '送信中...';
+
+      const params = new URLSearchParams(window.location.search);
+      const dateParam = params.get('date') ? String(params.get('date')).trim() : '';
+
+      function formatDateForDisplay(raw) {
+        if (!raw) return '2026年5月15日 14:00';
+        var decoded = decodeURIComponent(raw).replace(/\+/g, ' ');
+        var m = decoded.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+        if (!m) return decoded;
+        var y = m[1];
+        var mo = parseInt(m[2], 10);
+        var d = parseInt(m[3], 10);
+        var out = y + '年' + mo + '月' + d + '日';
+        if (m[4] != null && m[5] != null) {
+          out += ' ' + ('0' + m[4]).slice(-2) + ':' + m[5];
+        }
+        return out;
+      }
+
+      var displayEl = document.getElementById('display-datetime');
+      if (displayEl) {
+        displayEl.textContent = formatDateForDisplay(dateParam);
+      }
+
+      var form = document.getElementById('attendance-form');
+      var btn = document.getElementById('btn-submit');
+      var completion = document.getElementById('completion-panel');
+      var statusEl = document.getElementById('status-message');
+
+      if (!form || !btn) return;
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        var name = (document.getElementById('field-name') && document.getElementById('field-name').value.trim()) || '';
+        var attendanceEl = document.querySelector('input[name="attendance"]:checked');
+        var attendance = attendanceEl ? attendanceEl.value : '';
+        var noteEl = document.getElementById('field-note');
+        var note = noteEl ? noteEl.value.trim() : '';
+
+        if (!name) {
+          alert('氏名を入力してください。');
+          return;
+        }
+        if (!attendance) {
+          alert('出欠（出席または欠席）を選択してください。');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = BTN_LABEL_SENDING;
+        if (statusEl) statusEl.textContent = '';
+
+        var payload = {
+          action: 'submitAttendance',
+          date: dateParam,
+          name: name,
+          attendance: attendance,
+          note: note,
+        };
+
+        try {
+          var r = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            mode: 'cors',
+          });
+          var t = await r.text();
+          var data;
+          try {
+            data = JSON.parse(t);
+          } catch (err) {
+            throw new Error('サーバー応答を解釈できません: ' + t.slice(0, 200));
+          }
+          if (!data || !data.ok) {
+            throw new Error((data && data.error) || '送信に失敗しました。');
+          }
+
+          form.classList.add('hidden');
+          if (completion) completion.classList.remove('hidden');
+          if (statusEl) statusEl.textContent = '';
+        } catch (err) {
+          alert('送信エラー: ' + (err && err.message ? err.message : err));
+          btn.disabled = false;
+          btn.textContent = BTN_LABEL_IDLE;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

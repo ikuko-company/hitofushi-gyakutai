@@ -4,6 +4,18 @@
 
 var GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
+/** 出欠回答の追記先スプレッドシート（スクリプトと同一の Google アカウントでアクセス可能であること） */
+const ATTENDANCE_SHEET_ID = "17S6cuRmOPDA949VNnFrcq1qrndRyBAOIWtQYoX8XOfQ";
+
+// ---------------------------------------------------------------------------
+// Web: 出欠フォーム（GET）— プロジェクト内に HTML ファイル「attendance_form」を配置すること
+// ---------------------------------------------------------------------------
+function doGet(e) {
+  return HtmlService.createHtmlOutputFromFile("attendance_form")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1")
+    .setTitle("虐待防止委員会 出欠のご回答");
+}
+
 // ---------------------------------------------------------------------------
 // LINE送信処理
 // ---------------------------------------------------------------------------
@@ -34,10 +46,27 @@ function doPost(e) {
     return ContentService.createTextOutput("Success");
   }
 
+  if (data && data.action === "submitAttendance") {
+    return handleAttendanceSubmit(data);
+  }
+
   if (data && data.action === "generateThemes") {
     return handleAiRequest(data);
   }
   return handleLineRequest(data);
+}
+
+// ---------------------------------------------------------------------------
+// 出欠: スプレッドシートへ追記
+// ---------------------------------------------------------------------------
+function handleAttendanceSubmit(data) {
+  try {
+    var sheet = SpreadsheetApp.openById(ATTENDANCE_SHEET_ID).getActiveSheet();
+    sheet.appendRow([new Date(), data.date, data.name, data.attendance, data.note]);
+    return outJson_({ ok: true });
+  } catch (ex) {
+    return outJson_({ ok: false, error: String(ex && ex.message ? ex.message : ex) });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -143,12 +172,29 @@ function extractThemes_(raw) {
 // ---------------------------------------------------------------------------
 // LINE: 従来フロー
 // ---------------------------------------------------------------------------
+/** 同一プロジェクトの Web アプリ（出欠フォーム doGet）のベースURL */
+function getAttendanceWebAppUrl_() {
+  try {
+    return ScriptApp.getService().getUrl();
+  } catch (e) {
+    return "";
+  }
+}
+
 function handleLineRequest(data) {
   var lineText = "【通知】委員会準備アプリからの連絡です。";
   if (data && data.date) {
     lineText = "虐待防止委員会 開催案内\n日時: " + String(data.date);
     if (data.location != null && String(data.location).trim() !== "") {
       lineText += "\n開催場所: " + String(data.location).trim();
+    }
+    var base = getAttendanceWebAppUrl_();
+    if (base) {
+      lineText +=
+        "\n出欠のご回答はこちら:\n" +
+        base +
+        "?date=" +
+        encodeURIComponent(String(data.date).trim());
     }
   } else if (data && data.message) lineText = String(data.message);
 
