@@ -261,7 +261,8 @@
             id="field-step2-situation-text"
             rows="6"
             class="w-full resize-y rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-            placeholder="現状や課題、不適切なケア・身体拘束など気になる点を入力してください。"
+            autocomplete="off"
+            placeholder="ここに入力してください（現状・課題、気になる点など）。"
           ></textarea>
         </div>
         <div class="mb-6 flex flex-wrap items-center justify-end gap-4">
@@ -283,15 +284,14 @@
               id="field-step2-theme-draft-1"
               value="1"
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
-              checked
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">案 1</span>
               <input
                 id="field-step2-theme-text-1"
                 type="text"
+                aria-label="テーマ案1"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                value="身体拘束の適正化と代替手段の共有"
+                placeholder="AIの提案がここに表示されます"
               />
             </span>
           </label>
@@ -304,12 +304,12 @@
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">案 2</span>
               <input
                 id="field-step2-theme-text-2"
                 type="text"
+                aria-label="テーマ案2"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                value="記録・報告体制の見直しと職員間連携"
+                placeholder="AIの提案がここに表示されます"
               />
             </span>
           </label>
@@ -322,12 +322,12 @@
               class="mt-2 h-4 w-4 border-gray-300 text-panel-accent focus:ring-panel-accent"
             />
             <span class="min-w-0 flex-1">
-              <span class="mb-2 block text-xs font-medium text-stone-500">案 3</span>
               <input
                 id="field-step2-theme-text-3"
                 type="text"
+                aria-label="テーマ案3"
                 class="w-full rounded border border-gray-200 px-2 py-2 text-sm focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
-                value="利用者の意思尊重を中心とした支援の質向上"
+                placeholder="AIの提案がここに表示されます"
               />
             </span>
           </label>
@@ -1471,35 +1471,220 @@
         if (currentStepIndex < stepOrder.length - 1) goToStepIndex(currentStepIndex + 1);
       });
 
-      function demoThemeDraftsFromSituation() {
-        const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
-        const fac = (appConfig.facility && appConfig.facility.name) || '自事業所';
-        const prov =
-          (appConfig.ai && appConfig.ai.provider && (AI_PROV_LABELS[appConfig.ai.provider] || appConfig.ai.provider)) || '';
-        const meta =
-          (base ? '（状況メモを踏まえた想定 / ' : '（') + fac + (prov ? ' / AI:' + prov : '') + '）';
-        const hasPrompt = !!(appConfig.step2 && String(appConfig.step2.aiSystemPrompt || '').trim());
-        const hint = base
-          ? meta + ' '
-          : (fac
-              ? '（' + fac + (prov ? ' / ' + prov : '') + (hasPrompt ? ' / 方針反映' : '') + '） '
-              : '');
-        document.getElementById('field-step2-theme-text-1').value =
-          hint + '身体拘束の適正化と代替手段の共有';
-        document.getElementById('field-step2-theme-text-2').value =
-          hint + '記録・報告体制の見直しと職員間連携';
-        document.getElementById('field-step2-theme-text-3').value =
-          hint + '利用者の意思尊重を中心とした支援の質向上';
+      function clearStep2ThemeDraftFields() {
+        for (var i = 1; i <= 3; i++) {
+          var el = document.getElementById('field-step2-theme-text-' + i);
+          if (el) el.value = '';
+        }
+        document.querySelectorAll('input[name="theme-draft"]').forEach(function (r) {
+          r.checked = false;
+        });
+      }
+
+      /** Markdown の ``` / ```json フェンスを外す */
+      function stripMarkdownCodeFences(s) {
+        var str = String(s).trim();
+        str = str.replace(/^```(?:json)?\s*\r?\n?/i, '');
+        str = str.replace(/\r?\n?\s*```\s*$/i, '');
+        return str.trim();
+      }
+
+      /** 先頭ノイズ除去・BOM・インラインの ``` 除去・先頭 { 〜 末尾 } で JSON 部分を切り出し */
+      function loosenThemesJsonCandidate(raw) {
+        var t = String(raw == null ? '' : raw).replace(/^\uFEFF/, '');
+        t = t.replace(/```json/gi, '').replace(/```/g, '').trim();
+        t = stripMarkdownCodeFences(t);
+        var i0 = t.indexOf('{');
+        if (i0 > 0) t = t.slice(i0);
+        var i1 = t.lastIndexOf('}');
+        if (i1 !== -1 && i1 >= 0) t = t.slice(0, i1 + 1);
+        return t.trim();
+      }
+
+      function looksLikeNestedThemesPayload(s) {
+        return /"themes"\s*:\s*\[/.test(String(s || ''));
+      }
+
+      /** JSON 文字列内の \\ \" \\n 等を最低限復元 */
+      function unescapeJsonStringChunk(chunk) {
+        return String(chunk)
+          .replace(/\\\\/g, '\u0000SL\u0000')
+          .replace(/\\"/g, '"')
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '\r')
+          .replace(/\\t/g, '\t')
+          .replace(/\u0000SL\u0000/g, '\\');
+      }
+
+      /**
+       * GAS が返す themes が途中切れで JSON.parse 不能なとき、
+       * "themes":[ 以降を走査してダブルクォート区切りの文字列を最大3件取り出す（最後の要素は閉じ " なしでも EOF まで）。
+       */
+      function extractThemesFromThemesArrayLoose(src) {
+        var str = String(src == null ? '' : src);
+        var m = str.match(/"themes"\s*:\s*\[/i);
+        if (!m) return null;
+        var bracket = str.indexOf('[', m.index);
+        if (bracket === -1) return null;
+        var pos = bracket + 1;
+        var out = [];
+        while (pos < str.length && out.length < 3) {
+          while (pos < str.length && /\s/.test(str.charAt(pos))) pos++;
+          if (pos >= str.length || str.charAt(pos) === ']') break;
+          if (str.charAt(pos) !== '"') break;
+          pos++;
+          var buf = '';
+          while (pos < str.length) {
+            var c = str.charAt(pos);
+            if (c === '\\') {
+              if (pos + 1 < str.length) {
+                buf += c + str.charAt(pos + 1);
+                pos += 2;
+              } else {
+                buf += c;
+                pos++;
+              }
+              continue;
+            }
+            if (c === '"') {
+              pos++;
+              break;
+            }
+            buf += c;
+            pos++;
+          }
+          out.push(unescapeJsonStringChunk(buf).trim());
+          while (pos < str.length && /\s/.test(str.charAt(pos))) pos++;
+          if (str.charAt(pos) === ',') pos++;
+        }
+        while (out.length < 3) out.push('');
+        return out.slice(0, 3);
+      }
+
+      /** 1本の文字列から { "themes": [...] } またはトップレベル配列をパースして3件返す */
+      function parseThemesFromJsonString(raw) {
+        var seeds = [];
+        var a = stripMarkdownCodeFences(String(raw == null ? '' : raw).trim());
+        if (a) seeds.push(a);
+        var b = loosenThemesJsonCandidate(raw);
+        if (b && b !== a) seeds.push(b);
+
+        var seen = {};
+        var u;
+        for (u = 0; u < seeds.length; u++) {
+          var s = seeds[u];
+          if (!s || seen[s]) continue;
+          seen[s] = true;
+          try {
+            var o = JSON.parse(s);
+            if (o && Array.isArray(o.themes) && o.themes.length >= 3) {
+              return o.themes.slice(0, 3).map(function (x) {
+                return String(x == null ? '' : x).trim();
+              });
+            }
+            if (Array.isArray(o) && o.length >= 3) {
+              return o.slice(0, 3).map(function (x) {
+                return String(x == null ? '' : x).trim();
+              });
+            }
+          } catch (e) {}
+        }
+
+        var loose = extractThemesFromThemesArrayLoose(raw);
+        if (loose && loose.length === 3) {
+          var n = 0;
+          var k;
+          for (k = 0; k < 3; k++) {
+            if (String(loose[k] || '').trim()) n++;
+          }
+          if (n >= 1) return loose;
+        }
+        loose = extractThemesFromThemesArrayLoose(loosenThemesJsonCandidate(raw));
+        if (loose && loose.length === 3) {
+          n = 0;
+          for (k = 0; k < 3; k++) {
+            if (String(loose[k] || '').trim()) n++;
+          }
+          if (n >= 1) return loose;
+        }
+        return null;
+      }
+
+      /**
+       * GAS フォールバック等で data.themes[0] に JSON 文字列がネストした場合を検査し、
+       * 常に3要素のプレーン文字列配列に正規化する。
+       */
+      function normalizeGasThemesArray(themes) {
+        if (themes == null) return null;
+        if (typeof themes === 'string') {
+          return parseThemesFromJsonString(themes);
+        }
+        if (!Array.isArray(themes)) return null;
+
+        var j;
+        for (j = 0; j < themes.length; j++) {
+          if (typeof themes[j] === 'string') {
+            var parsed = parseThemesFromJsonString(themes[j]);
+            if (parsed && parsed.length === 3) return parsed;
+          }
+        }
+
+        if (themes.length === 1 && typeof themes[0] === 'string') {
+          var one = parseThemesFromJsonString(themes[0]);
+          if (one && one.length === 3) return one;
+        }
+
+        if (themes.length >= 3) {
+          var out = [];
+          for (j = 0; j < 3; j++) {
+            var el = themes[j];
+            var str =
+              typeof el === 'string'
+                ? stripMarkdownCodeFences(el)
+                : String(el == null ? '' : el).trim();
+            var sub = parseThemesFromJsonString(str);
+            if (sub && sub.length === 3) return sub;
+            out.push(str);
+          }
+          if (
+            looksLikeNestedThemesPayload(out[0]) &&
+            !String(out[1] || '').trim() &&
+            !String(out[2] || '').trim()
+          ) {
+            var nested = parseThemesFromJsonString(out[0]);
+            if (nested && nested.length === 3) return nested;
+            var extracted = extractThemesFromThemesArrayLoose(out[0]);
+            if (extracted && extracted.length === 3) return extracted;
+          }
+          if (looksLikeNestedThemesPayload(out[0])) {
+            var rescue = extractThemesFromThemesArrayLoose(out[0]);
+            if (rescue && rescue.length === 3) {
+              var nz = 0;
+              for (var zi = 0; zi < 3; zi++) {
+                if (String(rescue[zi] || '').trim()) nz++;
+              }
+              if (nz >= 1) return rescue;
+            }
+          }
+          return out;
+        }
+        return null;
       }
 
       var GAS_WEBAPP_URL =
-        'https://script.google.com/macros/s/AKfycbyNn15ddUa4YBClaQcxmUv8bPDVV8Nntx7IiRY8l1iU6uwwmgqyg3wtyv0pumF9vGZ0/exec';
+        'https://script.google.com/macros/s/AKfycbzeubBqEVv00g5yX_lOMB5FXRQIu_U2UEoEU09xwrs2VjcYi1Ca7Is_y380DJxl3_d3/exec';
 
       async function requestThemesFromGas() {
         const btn = document.getElementById('btn-step2-theme-create');
+        const BTN_LABEL_IDLE = 'テーマ案作成';
+        const BTN_LABEL_LOADING = '🤖 AIがテーマを考案中...';
+
+        clearStep2ThemeDraftFields();
         if (btn) {
           btn.disabled = true;
+          btn.textContent = BTN_LABEL_LOADING;
         }
+
         const facilityName = (appConfig.facility && appConfig.facility.name) || '';
         const serviceType = (appConfig.facility && appConfig.facility.serviceType) || '';
         const situation = val('field-step2-situation-text');
@@ -1529,33 +1714,31 @@
           try {
             data = JSON.parse(t);
           } catch (err) {
-            throw new Error('GAS 応答を JSON として解釈できません。Web アプリ再デプロイと CORS を確認してください: ' + t.slice(0, 200));
+            throw new Error(
+              'GAS 応答を JSON として解釈できません。Web アプリ再デプロイと CORS を確認してください: ' +
+                t.slice(0, 200)
+            );
           }
           if (!data || !data.ok) {
             throw new Error((data && data.error) || 'テーマ案の取得に失敗');
           }
-          if (!data.themes || data.themes.length < 3) {
-            throw new Error('テーマ案が3件揃いません。');
+          var normalized = normalizeGasThemesArray(data.themes);
+          if (!normalized || normalized.length !== 3) {
+            throw new Error('テーマ案が3件揃いません（正規化後も不足）。');
           }
-          const prov =
-            (appConfig.ai && appConfig.ai.provider && (AI_PROV_LABELS[appConfig.ai.provider] || appConfig.ai.provider)) || '';
-          const base = val('field-step2-situation-text').replace(/\s+/g, ' ').trim();
-          const fac = facilityName || '自事業所';
-          const meta = base
-            ? '（' + fac + (prov ? ' / ' + prov : '') + ' / GAS+Gemini） '
-            : '（' + fac + (prov ? ' / ' + prov : '') + ' / GAS+Gemini） ';
-          document.getElementById('field-step2-theme-text-1').value = meta + data.themes[0];
-          document.getElementById('field-step2-theme-text-2').value = meta + data.themes[1];
-          document.getElementById('field-step2-theme-text-3').value = meta + data.themes[2];
-          const r1 = document.getElementById('field-step2-theme-draft-1');
-          if (r1) {
-            r1.checked = true;
-          }
+          document.getElementById('field-step2-theme-text-1').value = normalized[0];
+          document.getElementById('field-step2-theme-text-2').value = normalized[1];
+          document.getElementById('field-step2-theme-text-3').value = normalized[2];
         } catch (e) {
-          alert('GAS からの取得に失敗: ' + e + '\n\nローカル（デモ）の仮案に切り替えます。');
-          demoThemeDraftsFromSituation();
+          alert(
+            'GAS からの取得に失敗しました: ' +
+              e +
+              '\n\nテーマ案の入力欄を空にしました。通信・設定をご確認ください。'
+          );
+          clearStep2ThemeDraftFields();
         } finally {
           if (btn) {
+            btn.textContent = BTN_LABEL_IDLE;
             btn.disabled = false;
           }
         }
