@@ -145,8 +145,12 @@ function extractThemes_(raw) {
 // ---------------------------------------------------------------------------
 function handleLineRequest(data) {
   var lineText = "【通知】委員会準備アプリからの連絡です。";
-  if (data && data.date) lineText = "虐待防止委員会 開催案内\n日時: " + String(data.date);
-  else if (data && data.message) lineText = String(data.message);
+  if (data && data.date) {
+    lineText = "虐待防止委員会 開催案内\n日時: " + String(data.date);
+    if (data.location != null && String(data.location).trim() !== "") {
+      lineText += "\n開催場所: " + String(data.location).trim();
+    }
+  } else if (data && data.message) lineText = String(data.message);
 
   try { sendLineMessage(lineText); } catch (err) {}
   return ContentService.createTextOutput("Success");

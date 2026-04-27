@@ -430,6 +430,16 @@
           </div>
           <div id="field-step5-calendar-grid" class="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2 text-sm"></div>
         </div>
+        <div class="mt-4 flex flex-col gap-2">
+          <label class="text-sm font-medium text-stone-800" for="field-step5-location">開催場所</label>
+          <input
+            id="field-step5-location"
+            type="text"
+            class="w-full rounded border border-gray-200 px-2 py-2 text-sm text-stone-800 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+            value="事業所内 および Zoom"
+            autocomplete="off"
+          />
+        </div>
         <p class="mt-4 text-xs text-stone-600">
           開催日に「○」を1件だけ選び、時間を入力してください。別の日に「○」を付け替えると、前の日の指定は解除されます。
         </p>
@@ -459,7 +469,7 @@
           <button
             type="button"
             id="btn-wizard-next"
-            class="rounded border border-panel-accent bg-panel-accent px-6 py-4 text-sm font-medium text-white shadow-sm transition hover:brightness-105"
+            class="rounded border border-panel-accent bg-panel-accent px-6 py-4 text-sm font-medium text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:brightness-100"
           >
             次へ
           </button>
@@ -1316,6 +1326,26 @@
         document.getElementById('btn-wizard-back').disabled = currentStepIndex === 0;
 
         if (isConfirm) renderSummary();
+        syncWizardNextForStep2Theme_();
+      }
+
+      /** Step 2（テーマ案）ではラジオ未選択時に「次へ」を無効化する */
+      function syncWizardNextForStep2Theme_() {
+        var btn = document.getElementById('btn-wizard-next');
+        if (!btn || btn.classList.contains('hidden')) return;
+        if (stepOrder[currentStepIndex] !== '2') {
+          btn.disabled = false;
+          btn.removeAttribute('aria-disabled');
+          return;
+        }
+        var checked = document.querySelector('input[name="theme-draft"]:checked');
+        if (checked) {
+          btn.disabled = false;
+          btn.removeAttribute('aria-disabled');
+        } else {
+          btn.disabled = true;
+          btn.setAttribute('aria-disabled', 'true');
+        }
       }
 
       function goToStepIndex(idx) {
@@ -1442,9 +1472,14 @@
         );
 
         const selKey = calendarSelectedDateKey();
-        const schedHtml = selKey
-          ? '<p class="font-medium">' + escapeHtml(formatCalendarSlotForConfirm(selKey)) + '</p>'
-          : '<p>（開催日の「○」が未選択です）</p>';
+        const schedHtml =
+          (selKey
+            ? '<p class="font-medium">' + escapeHtml(formatCalendarSlotForConfirm(selKey)) + '</p>'
+            : '<p>（開催日の「○」が未選択です）</p>') +
+          '<p class="mt-3 mb-1 text-xs font-medium text-stone-500">開催場所</p>' +
+          '<p>' +
+          escapeHtml(val('field-step5-location') || '（未入力）') +
+          '</p>';
         block('Step 5 — スケジュール', schedHtml, 4);
 
         root.querySelectorAll('[data-jump-step]').forEach(function (btn) {
@@ -1468,7 +1503,14 @@
       });
 
       document.getElementById('btn-wizard-next').addEventListener('click', function () {
+        if (stepOrder[currentStepIndex] === '2') {
+          if (!document.querySelector('input[name="theme-draft"]:checked')) return;
+        }
         if (currentStepIndex < stepOrder.length - 1) goToStepIndex(currentStepIndex + 1);
+      });
+
+      document.querySelectorAll('input[name="theme-draft"]').forEach(function (radio) {
+        radio.addEventListener('change', syncWizardNextForStep2Theme_);
       });
 
       function clearStep2ThemeDraftFields() {
@@ -1479,6 +1521,7 @@
         document.querySelectorAll('input[name="theme-draft"]').forEach(function (r) {
           r.checked = false;
         });
+        syncWizardNextForStep2Theme_();
       }
 
       /** Markdown の ``` / ```json フェンスを外す */
@@ -1672,7 +1715,7 @@
       }
 
       var GAS_WEBAPP_URL =
-        'https://script.google.com/macros/s/AKfycbzeubBqEVv00g5yX_lOMB5FXRQIu_U2UEoEU09xwrs2VjcYi1Ca7Is_y380DJxl3_d3/exec';
+        'https://script.google.com/macros/s/AKfycbyVfyf5otsjmKZaNyweyzQzWCGIkf9ZBY195gsQCPrHpdpmikYN4bdojlymq6MibXLH/exec';
 
       async function requestThemesFromGas() {
         const btn = document.getElementById('btn-step2-theme-create');
@@ -1741,6 +1784,7 @@
             btn.textContent = BTN_LABEL_IDLE;
             btn.disabled = false;
           }
+          syncWizardNextForStep2Theme_();
         }
       }
 
@@ -2245,19 +2289,24 @@
           selectedDate = selKey + (detail.time ? ' ' + detail.time : ' (時間未設定)');
         }
 
+        const locEl = document.getElementById('field-step5-location');
+        const location = locEl ? String(locEl.value || '').trim() : '';
+
         try {
-          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る。LINE 用は従来どおり { date }）
+          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る）
           await fetch(GAS_WEBAPP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ date: selectedDate }),
+            body: JSON.stringify({ date: selectedDate, location: location }),
           });
 
           alert(
             '「' +
               selectedDate +
-              '」の開催案内をLINEに送信指示しました！\nスマホを確認してください。',
+              '」' +
+              (location ? '\n開催場所: ' + location : '') +
+              '\n\n開催案内をLINEに送信指示しました！\nスマホを確認してください。',
           );
         } catch (e) {
           alert('エラーが発生しました: ' + e);
