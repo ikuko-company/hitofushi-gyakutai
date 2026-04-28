@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>虐待防止委員会 議案書 | ワークショップひとふし</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            agenda: {
+              blue: "#1e40af",
+              green: "#047857",
+              muted: "#f8fafc",
+            },
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-white text-lg leading-relaxed text-slate-900 antialiased print:bg-white print:text-black">
+  <!-- 読み込み（画面上のみ） -->
+  <div
+    id="agenda-loading-bar"
+    class="print:hidden sticky top-0 z-50 border-b border-blue-200 bg-blue-50 px-4 py-4 text-center text-base font-semibold text-blue-900 shadow-sm"
+    role="status"
+    aria-live="polite"
+  >
+    最新の議案を読み込み中…
+  </div>
+
+  <main class="mx-auto max-w-2xl px-5 pb-28 pt-8 text-lg leading-relaxed text-slate-800 sm:px-8 sm:pb-16">
+    <p id="agenda-fetch-error" class="mb-6 hidden rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-base text-red-900 print:hidden" role="alert"></p>
+    <p id="agenda-empty-notice" class="mb-6 hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-base text-amber-950 print:hidden">
+      まだ管理パネルから議案がクラウドに保存されていません。担当者がパネルで「決定」を押すと、ここに最新の内容が表示されます。
+    </p>
+
+    <!-- 1. ヘッダー -->
+    <header class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-6 shadow-sm">
+      <p class="text-center text-xs font-semibold uppercase tracking-wider text-blue-800">虐待防止委員会</p>
+      <h1 class="mt-2 text-center text-2xl font-bold leading-snug text-blue-900 sm:text-3xl">
+        <span id="agenda-era-label">令和8年度</span><br />
+        虐待防止委員会 議案書
+      </h1>
+      <dl class="mx-auto mt-6 max-w-md space-y-3 border-t border-slate-200 pt-5 text-base">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+          <dt class="flex shrink-0 items-center gap-1 font-semibold text-slate-700">
+            <span class="text-xl" aria-hidden="true">📅</span>
+            開催日時
+          </dt>
+          <dd id="agenda-dd-datetime" class="min-h-[1.75rem] flex-1 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-slate-600">
+            —
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+          <dt class="flex shrink-0 items-center gap-1 font-semibold text-slate-700">
+            <span class="text-xl" aria-hidden="true">📍</span>
+            開催場所
+          </dt>
+          <dd id="agenda-dd-location" class="min-h-[1.75rem] flex-1 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-slate-600">
+            —
+          </dd>
+        </div>
+      </dl>
+      <p id="agenda-meta-line" class="mt-4 hidden text-center text-xs text-slate-500 print:hidden"></p>
+    </header>
+
+    <!-- 2. 出席者 -->
+    <section class="mt-10 scroll-mt-28 rounded-2xl border border-emerald-200 bg-emerald-50/50 px-5 py-6" aria-labelledby="sec-attendees">
+      <h2 id="sec-attendees" class="flex items-center gap-2 text-xl font-bold text-emerald-900">
+        <span class="text-2xl" aria-hidden="true">👥</span>
+        出席者
+      </h2>
+      <div class="mt-4 space-y-4">
+        <div>
+          <p class="mb-2 text-sm font-semibold text-emerald-800">委員長</p>
+          <div id="agenda-chair-block" class="min-h-[3rem] rounded-xl border-2 border-dashed border-emerald-300 bg-white px-4 py-3 text-base text-slate-600">
+            —
+          </div>
+        </div>
+        <div>
+          <p class="mb-2 text-sm font-semibold text-emerald-800">出席委員</p>
+          <div id="agenda-members-block" class="min-h-[6rem] rounded-xl border-2 border-dashed border-emerald-300 bg-white px-4 py-3 text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+            —
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 議題クイックリンク -->
+    <nav class="mt-10 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-5" aria-label="議題へのジャンプ">
+      <p class="mb-3 flex items-center gap-2 text-base font-bold text-blue-900">
+        <span class="text-2xl" aria-hidden="true">🔗</span>
+        議題一覧（タップで移動）
+      </p>
+      <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <a href="#agenda-1" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第1号</a>
+        <a href="#agenda-2" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第2号</a>
+        <a href="#agenda-3" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第3号</a>
+        <a href="#agenda-4" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第4号</a>
+        <a href="#agenda-5" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第5号</a>
+        <a href="#agenda-6" class="rounded-xl bg-white px-4 py-3 text-center text-base font-semibold text-blue-900 shadow-sm ring-1 ring-blue-200 transition hover:bg-blue-100">第6号</a>
+      </div>
+    </nav>
+
+    <!-- 4. 第1号 -->
+    <article id="agenda-1" class="scroll-mt-28 mt-12 border-t-4 border-blue-700 pt-8">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">1</span>
+        第1号議案：委員会の設置および委員の任命（承認）
+      </h2>
+      <div id="agenda-body-1" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-base text-slate-600 whitespace-pre-wrap">
+        —
+      </div>
+      <p class="mt-4 flex items-center gap-2 text-base font-semibold text-emerald-800">
+        <span aria-hidden="true">✓</span>
+        承認を求めます。
+      </p>
+    </article>
+
+    <!-- 5. 第2号 -->
+    <article id="agenda-2" class="scroll-mt-28 mt-14 border-t border-slate-200 pt-12">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">2</span>
+        第2号議案：ヒヤリハットおよび虐待疑い事案の報告
+      </h2>
+      <div class="mt-5 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-5 text-base text-slate-700">
+        <p class="font-medium text-amber-900">該当がない場合の例</p>
+        <p class="mt-2 rounded-lg bg-white px-3 py-2 text-slate-600 ring-1 ring-amber-200">報告事項なし</p>
+      </div>
+      <div id="agenda-body-2" class="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-base text-slate-600 whitespace-pre-wrap">
+        —
+      </div>
+    </article>
+
+    <!-- 6. 第3号 -->
+    <article id="agenda-3" class="scroll-mt-28 mt-14 border-t border-slate-200 pt-12">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">3</span>
+        第3号議案：本日のテーマ（事業所の現状・課題の要約）
+      </h2>
+      <div id="agenda-body-3" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-base text-slate-600 whitespace-pre-wrap">
+        —
+      </div>
+    </article>
+
+    <!-- 7. 第4号：マニュアル改定 -->
+    <article id="agenda-4" class="scroll-mt-28 mt-14 border-t border-slate-200 pt-12">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">4</span>
+        第4号議案：マニュアル改定案
+      </h2>
+
+      <div id="agenda-4-structured" class="mt-6 space-y-8">
+        <div class="rounded-2xl border-2 border-blue-600 bg-blue-50 px-4 py-5 shadow-inner sm:px-6">
+          <p class="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-blue-900">判定</p>
+          <p id="agenda-4-verdict-line" class="mt-2 text-xl font-bold leading-snug text-blue-950 sm:text-2xl">
+            【判定】<span id="agenda-4-verdict-body" class="break-words">—</span>
+          </p>
+        </div>
+
+        <div>
+          <h3 class="flex items-center gap-2 text-lg font-bold text-emerald-900 sm:text-xl">
+            <span class="text-2xl" aria-hidden="true">📌</span>
+            【変更のポイント】
+          </h3>
+          <ul id="agenda-4-diff-list" class="mt-4 list-none space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-5 text-base text-slate-800"></ul>
+        </div>
+
+        <div>
+          <h3 class="flex items-center gap-2 text-lg font-bold text-slate-900 sm:text-xl">
+            <span class="text-2xl" aria-hidden="true">📄</span>
+            【新しいマニュアルの文章】
+          </h3>
+          <div
+            id="agenda-4-concrete"
+            class="mt-4 select-all rounded-xl border-2 border-slate-400 bg-white px-4 py-6 font-mono text-base leading-relaxed text-slate-800 shadow-inner sm:px-6 whitespace-pre-wrap"
+          >
+            —
+          </div>
+        </div>
+      </div>
+
+      <div id="agenda-4-plain" class="mt-6 hidden rounded-xl border border-slate-300 bg-slate-50 px-4 py-5">
+        <p class="mb-2 text-sm font-semibold text-slate-700">改定案（全文）</p>
+        <pre id="agenda-4-plain-text" class="font-mono text-base leading-relaxed text-slate-800 whitespace-pre-wrap"></pre>
+      </div>
+    </article>
+
+    <!-- 8. 第5号 -->
+    <article id="agenda-5" class="scroll-mt-28 mt-14 border-t border-slate-200 pt-12">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">5</span>
+        第5号議案：第4号議案に基づいた研修テーマ・日程・研修設計者の決定（承認）
+      </h2>
+      <div id="agenda-body-5" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-base text-slate-600 whitespace-pre-wrap">
+        —
+      </div>
+      <p class="mt-4 flex items-center gap-2 text-base font-semibold text-emerald-800">
+        <span aria-hidden="true">✓</span>
+        承認を求めます。
+      </p>
+    </article>
+
+    <!-- 9. 第6号 -->
+    <article id="agenda-6" class="scroll-mt-28 mt-14 border-t border-slate-200 pt-12">
+      <h2 class="flex flex-wrap items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-700 text-lg font-bold text-white">6</span>
+        第6号議案：今後の開催スケジュール
+      </h2>
+      <div id="agenda-body-6" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-base text-slate-600 whitespace-pre-wrap">
+        —
+      </div>
+    </article>
+
+    <!-- 10. 決裁欄（スマホ・画面閲覧時は非表示／印刷・PDF時のみ表示） -->
+    <section class="hidden print:block print:break-inside-avoid" aria-label="決裁・承認印欄">
+      <div class="mt-14 border-t-2 border-slate-800 pt-10">
+        <h2 class="text-center text-xl font-bold text-slate-900">決裁・承認印</h2>
+        <p class="mt-2 text-center text-sm text-slate-600">（印刷後、押印・署名にご利用ください）</p>
+        <div class="mt-8 overflow-x-auto">
+          <table class="w-full min-w-[280px] border-collapse border-2 border-slate-800 text-base">
+            <thead>
+              <tr class="bg-slate-100">
+                <th scope="col" class="border border-slate-800 px-3 py-3 text-left font-bold">役職</th>
+                <th scope="col" class="border border-slate-800 px-3 py-3 text-left font-bold">氏名</th>
+                <th scope="col" class="border border-slate-800 px-3 py-3 text-center font-bold">承認印</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="border border-slate-800 px-3 py-10 align-top">管理者</td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+              </tr>
+              <tr>
+                <td class="border border-slate-800 px-3 py-10 align-top">委員長</td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+              </tr>
+              <tr>
+                <td class="border border-slate-800 px-3 py-10 align-top">その他</td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+                <td class="border border-slate-800 px-3 py-10 align-top"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. 印刷／PDF（画面上のみ・ワンタップ） -->
+    <div class="mt-12 print:hidden">
+      <p class="mb-3 text-center text-sm text-slate-600">監査・記録用に、印刷またはPDF保存ができます。</p>
+      <button
+        type="button"
+        onclick="window.print()"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:scale-[0.99]"
+      >
+        <span class="text-2xl" aria-hidden="true">🖨</span>
+        印刷／PDF保存
+      </button>
+    </div>
+
+    <!-- マニュアルへ戻る -->
+    <div class="mt-14 border-t border-slate-200 pt-10 print:hidden">
+      <a
+        href="hitofushi-training-docs/gyakutai-boushi/manual.html"
+        class="flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 bg-white px-6 py-4 text-center text-lg font-semibold text-blue-800 shadow-sm transition hover:bg-blue-50"
+      >
+        <span aria-hidden="true">←</span>
+        マニュアル本体（manual.html）へ戻る
+      </a>
+    </div>
+  </main>
+
+  <footer class="mx-auto max-w-2xl px-5 pb-10 pt-4 text-center text-sm text-slate-500 print:hidden">
+    ワークショップひとふし · 虐待防止委員会 議案書（クラウド連動）
+  </footer>
+
+  <script>
+(function () {
+  var GAS_WEBAPP_URL =
+    'https://script.google.com/macros/s/AKfycbwRxmT7rRZuEArudKFSGwweULh5m4nITr3v_Kdq3KopV1RG6TB7gEkY8FDLD5jtaOWy/exec';
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function setText(id, text) {
+    var el = $(id);
+    if (el) el.textContent = text == null ? '' : String(text);
+  }
+
+  function formatSavedAt(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return (
+        d.getFullYear() +
+        '年' +
+        (d.getMonth() + 1) +
+        '月' +
+        d.getDate() +
+        '日 ' +
+        String(d.getHours()).padStart(2, '0') +
+        ':' +
+        String(d.getMinutes()).padStart(2, '0')
+      );
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function buildAgenda1Text(rows) {
+    var list = Array.isArray(rows) ? rows : [];
+    var chair = list.find(function (r) {
+      return r && r.role === '委員長';
+    });
+    var lines = [];
+    lines.push(
+      '虐待防止委員会は、関係法令・指針に基づき、虐待の防止に関する対策を計画的に推進するために設置する。'
+    );
+    lines.push('');
+    lines.push('【構成】');
+    list.forEach(function (r) {
+      if (!r || !r.role) return;
+      var name = (r.name || '（氏名未入力）').trim();
+      var title = (r.title || '').trim();
+      lines.push('・' + r.role + '：' + name + (title ? '（' + title + '）' : ''));
+    });
+    lines.push('');
+    lines.push(
+      chair && chair.name
+        ? '以上より、委員長・委員の体制について承認を求める。'
+        : '（委員長の氏名が未入力のときは、パネルで入力のうえ再度確定してください。）'
+    );
+    return lines.join('\n');
+  }
+
+  function fillDiffList(items) {
+    var ul = $('agenda-4-diff-list');
+    if (!ul) return;
+    ul.innerHTML = '';
+    var arr = Array.isArray(items) ? items.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean) : [];
+    if (!arr.length) {
+      var li = document.createElement('li');
+      li.className = 'flex gap-3';
+      li.innerHTML =
+        '<span class="mt-1 shrink-0 font-bold text-emerald-700">・</span><span class="flex-1 rounded-lg border border-dashed border-emerald-300 bg-white px-3 py-2 text-slate-600">（変更点の列挙なし、または要約のみ）</span>';
+      ul.appendChild(li);
+      return;
+    }
+    arr.slice(0, 15).forEach(function (text) {
+      var li = document.createElement('li');
+      li.className = 'flex gap-3';
+      var spanDot = document.createElement('span');
+      spanDot.className = 'mt-1 shrink-0 font-bold text-emerald-700';
+      spanDot.textContent = '・';
+      var spanBody = document.createElement('span');
+      spanBody.className =
+        'min-h-[1.5rem] flex-1 rounded-lg border border-dashed border-emerald-300 bg-white px-3 py-2 text-slate-700';
+      spanBody.textContent = text;
+      li.appendChild(spanDot);
+      li.appendChild(spanBody);
+      ul.appendChild(li);
+    });
+  }
+
+  function applyAgenda4(a) {
+    var rev = a.revisionStructured && typeof a.revisionStructured === 'object' ? a.revisionStructured : null;
+    var fmt = String(a.revisionFormatted || '').trim();
+    var structuredVisible =
+      rev &&
+      (rev.necessity ||
+        rev.verdict ||
+        (Array.isArray(rev.diffItems) && rev.diffItems.length) ||
+        (rev.concreteRevision && String(rev.concreteRevision).trim()));
+
+    var boxS = $('agenda-4-structured');
+    var boxP = $('agenda-4-plain');
+    if (!boxS || !boxP) return;
+
+    if (structuredVisible) {
+      boxS.classList.remove('hidden');
+      boxP.classList.add('hidden');
+      var verdictParts = [];
+      if (rev.necessity) verdictParts.push(String(rev.necessity));
+      if (rev.verdict) verdictParts.push(String(rev.verdict));
+      setText('agenda-4-verdict-body', verdictParts.length ? verdictParts.join(' — ') : '—');
+      fillDiffList(rev.diffItems);
+      setText(
+        'agenda-4-concrete',
+        rev.concreteRevision && String(rev.concreteRevision).trim()
+          ? String(rev.concreteRevision).trim()
+          : '（具体的な改定文の記載なし）'
+      );
+    } else if (fmt) {
+      boxS.classList.add('hidden');
+      boxP.classList.remove('hidden');
+      setText('agenda-4-plain-text', fmt);
+    } else {
+      boxS.classList.remove('hidden');
+      boxP.classList.add('hidden');
+      setText('agenda-4-verdict-body', '—');
+      fillDiffList([]);
+      setText('agenda-4-concrete', '（管理パネルで「改定案作成」を実行し、議案を確定すると表示されます）');
+    }
+  }
+
+  function applyAgendaPayload(a) {
+    if (!a || typeof a !== 'object') return;
+
+    if (a.fiscalYearLabel) setText('agenda-era-label', a.fiscalYearLabel);
+
+    setText('agenda-dd-datetime', String(a.meetingDisplay || a.meetingSlotLine || '').trim() || '—');
+    setText('agenda-dd-location', String(a.location || '').trim() || '—');
+
+    var rows = Array.isArray(a.step1Members) ? a.step1Members : [];
+    var chair = rows.find(function (r) {
+      return r && r.role === '委員長';
+    });
+    var chairLine =
+      chair && (chair.name || chair.title)
+        ? (chair.name || '—') + (chair.title ? '（' + chair.title + '）' : '')
+        : '—';
+    setText('agenda-chair-block', chairLine);
+
+    var others = rows.filter(function (r) {
+      return r && r.role !== '委員長';
+    });
+    var memberLines = others
+      .map(function (r) {
+        return '・' + (r.role || '') + '：' + (r.name || '—') + (r.title ? '（' + r.title + '）' : '');
+      })
+      .join('\n');
+    setText('agenda-members-block', memberLines || '—');
+
+    setText('agenda-body-1', buildAgenda1Text(rows));
+
+    setText('agenda-body-2', String(a.agenda2Report || '報告事項なし').trim() || '報告事項なし');
+
+    var sit = String(a.situation || '').trim();
+    var theme = String(a.selectedTheme || '').trim();
+    var sec3 = '';
+    if (sit) sec3 += '【事業所の現状・関心事項】\n' + sit + '\n\n';
+    if (theme) sec3 += '【本日のテーマ（選択した議題）】\n' + theme;
+    setText('agenda-body-3', sec3.trim() || '—');
+
+    applyAgenda4(a);
+
+    var mt = String(a.selectedTheme || '').trim();
+    var when = String(a.meetingDisplay || a.meetingSlotLine || '').trim();
+    var loc = String(a.location || '').trim();
+    var lines5 = [];
+    lines5.push('【研修テーマ（案）】');
+    lines5.push(mt || '（テーマ未選択）');
+    lines5.push('');
+    lines5.push('【実施時期・場所のたたき台】');
+    lines5.push(when ? '・開催日時: ' + when : '・開催日時: （未設定）');
+    lines5.push(loc ? '・開催場所: ' + loc : '・開催場所: （未入力）');
+    lines5.push('');
+    lines5.push('【研修設計者】');
+    lines5.push('・委員会において指名・承認する（詳細は別紙・運用メモで調整）。');
+    setText('agenda-body-5', lines5.join('\n'));
+
+    var fut = String(a.scheduleFutureText || '').trim();
+    setText('agenda-body-6', fut || '（次回以降の開催予定は、会議の結論に応じて記載してください。）');
+
+    var saved = formatSavedAt(a.savedAt);
+    var meta = $('agenda-meta-line');
+    if (meta) {
+      if (saved) {
+        meta.textContent = 'クラウド反映: ' + saved;
+        meta.classList.remove('hidden');
+      } else {
+        meta.textContent = '';
+        meta.classList.add('hidden');
+      }
+    }
+  }
+
+  async function loadAgendaFromGas() {
+    var bar = $('agenda-loading-bar');
+    var errEl = $('agenda-fetch-error');
+    var emptyEl = $('agenda-empty-notice');
+    if (errEl) {
+      errEl.classList.add('hidden');
+      errEl.textContent = '';
+    }
+
+    try {
+      var url = GAS_WEBAPP_URL + '?action=getAgenda';
+      var r = await fetch(url, { method: 'GET', mode: 'cors' });
+      var t = await r.text();
+      var data;
+      try {
+        data = JSON.parse(t);
+      } catch (pe) {
+        throw new Error('応答が JSON ではありません。Web アプリの再デプロイを確認してください。');
+      }
+      if (!data || data.ok !== true) {
+        throw new Error((data && data.error) || 'データを取得できませんでした。');
+      }
+      if (!data.agenda) {
+        if (emptyEl) emptyEl.classList.remove('hidden');
+      } else {
+        if (emptyEl) emptyEl.classList.add('hidden');
+        applyAgendaPayload(data.agenda);
+      }
+    } catch (ex) {
+      if (errEl) {
+        errEl.textContent =
+          '議案の取得に失敗しました: ' + (ex && ex.message ? ex.message : String(ex));
+        errEl.classList.remove('hidden');
+      }
+      if (emptyEl) emptyEl.classList.add('hidden');
+    } finally {
+      if (bar) bar.classList.add('hidden');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAgendaFromGas);
+})();
+  </script>
+</body>
+</html>

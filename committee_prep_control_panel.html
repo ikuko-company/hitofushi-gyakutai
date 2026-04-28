@@ -1750,6 +1750,10 @@
       var GAS_WEBAPP_URL =
         'https://script.google.com/macros/s/AKfycbwRxmT7rRZuEArudKFSGwweULh5m4nITr3v_Kdq3KopV1RG6TB7gEkY8FDLD5jtaOWy/exec';
 
+      /** 議案書HTMLの公開URL（GitHub Pages 等。LINE案内文にそのまま入ります） */
+      var COMMITTEE_AGENDA_HANDOUT_PUBLIC_URL =
+        'https://ikuko-company.github.io/hitofushi-gyakutai/committee-agenda-handout.html';
+
       async function requestThemesFromGas() {
         const btn = document.getElementById('btn-step2-theme-create');
         const BTN_LABEL_IDLE = 'テーマ案作成';
@@ -2103,10 +2107,12 @@
           if (!data.revision || typeof data.revision !== 'object') {
             throw new Error('戻る内容の形が想定外でした。時間をおいて、もう一度「改定案作成」を押してください。');
           }
+          window.__lastRevisionFromGas = data.revision;
           if (out) {
             out.value = formatRevisionOutput_(data.revision);
           }
         } catch (e) {
+          window.__lastRevisionFromGas = null;
           alert('改定案を表示できませんでした。' + (e && e.message ? e.message : String(e)));
           if (out) {
             out.value = '';
@@ -2598,42 +2604,168 @@
       renderCalendar();
       goToStepIndex(0);
 
-      window.testLine = async function testLine() {
-        // 1. calendarStateから直接、選択された日時を組み立てる
-        const selKey = Object.keys(calendarState.selections)[0];
-        let selectedDate = '日付未選択';
+      function truncateAgendaString_(s, maxLen) {
+        var t = String(s == null ? '' : s);
+        if (t.length <= maxLen) return t;
+        return t.substring(0, maxLen) + '\n…（文字数の上限のため省略）';
+      }
 
+      /** Step4 改定要約（URLとは別。AIの構造化結果があれば優先） */
+      function buildStep4RevisionSummaryForPayload_() {
+        var rev = window.__lastRevisionFromGas;
+        if (rev && typeof rev === 'object') {
+          var bits = [rev.necessity, rev.verdict, rev.diffSummary]
+            .map(function (x) {
+              return x == null ? '' : String(x).trim();
+            })
+            .filter(Boolean);
+          if (bits.length) return bits.join('\n');
+        }
+        return val('revisionOutput');
+      }
+
+      function buildAttendanceFormUrl_() {
+        var u = GAS_WEBAPP_URL;
+        return u.indexOf('?') >= 0 ? u + '&page=attendance' : u + '?page=attendance';
+      }
+
+      function buildLineInviteText_(dateTimeLine, locationLine) {
+        var dt = String(dateTimeLine || '').trim() || '（日時未設定）';
+        var loc = String(locationLine || '').trim() || '（場所未入力）';
+        return (
+          'お疲れ様です。虐待防止委員会を開催します。\n\n' +
+          '日時：' +
+          dt +
+          '\n' +
+          '場所：' +
+          loc +
+          '\n\n' +
+          '👇 まずは出欠を回答してください（〆切：前日まで）\n' +
+          buildAttendanceFormUrl_() +
+          '\n\n' +
+          '📄 当日の議案・マニュアル改定案はこちら（会議中にスマホで開きます）\n' +
+          COMMITTEE_AGENDA_HANDOUT_PUBLIC_URL
+        );
+      }
+
+      async function copyTextToClipboard_(text) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(ta);
+        }
+      }
+
+      function buildAgendaPayloadForGas_() {
+        var selKey = calendarSelectedDateKey();
+        var slotLine = selKey ? formatCalendarSlotForConfirm(selKey) : '';
+        var meetingDisplay = '';
         if (selKey) {
-          const detail = calendarState.selections[selKey];
-          selectedDate = selKey + (detail.time ? ' ' + detail.time : ' (時間未設定)');
+          var row = calendarState.selections[selKey];
+          var ti = row && String(row.time || '').trim();
+          meetingDisplay = ti ? selKey + ' ' + ti : selKey + ' （時間未入力）';
         }
 
-        const locEl = document.getElementById('field-step5-location');
-        const location = locEl ? String(locEl.value || '').trim() : '';
+        var payload = {
+          fiscalYearLabel: '令和8年度',
+          facilityName: (appConfig.facility && appConfig.facility.name) || '',
+          serviceType: (appConfig.facility && appConfig.facility.serviceType) || '',
+          meetingDateKey: selKey || '',
+          meetingSlotLine: slotLine,
+          meetingDisplay: meetingDisplay || slotLine,
+          location: val('field-step5-location'),
+          step1Members: collectStep1Summary(),
+          situation: truncateAgendaString_(val('field-step2-situation-text'), 2500),
+          themeDrafts: [val('field-step2-theme-text-1'), val('field-step2-theme-text-2'), val('field-step2-theme-text-3')],
+          selectedTheme: selectedThemeText(),
+          manualUrl: val('field-step4-manual-link-optional'),
+          step4RevisionSummary: truncateAgendaString_(buildStep4RevisionSummaryForPayload_(), 800),
+          manualMemo: val('field-step4-manual-link-optional'),
+          manualFileLabel: typeof window.__cpManualName === 'string' ? window.__cpManualName : '',
+          revisionStructured: window.__lastRevisionFromGas && typeof window.__lastRevisionFromGas === 'object' ? window.__lastRevisionFromGas : null,
+          revisionFormatted: truncateAgendaString_(val('revisionOutput'), 4500),
+          agenda2Report: '報告事項なし',
+          scheduleFutureText: ''
+        };
+        return payload;
+      }
 
+      async function submitCommitteeAgendaAndNotify_() {
+        var btn = document.getElementById('btn-step6-submit');
+        var BTN_IDLE = '決定';
+        var BTN_LOAD = '保存中…';
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = BTN_LOAD;
+        }
+
+        var agenda = buildAgendaPayloadForGas_();
         try {
-          // 2. GASへ送信（mode: "no-cors" と text/plain を指定して安全に送る）
-          await fetch(GAS_WEBAPP_URL, {
+          var sizeProbe = JSON.stringify({ action: 'saveAgenda', agenda: agenda });
+          if (sizeProbe.length > 9500) {
+            alert(
+              '議案データが大きすぎて保存できません（約9KB上限）。Step 2の現状欄や改定案テキストを短くしてから、もう一度お試しください。'
+            );
+            return;
+          }
+          var r = await fetch(GAS_WEBAPP_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ date: selectedDate, location: location }),
+            body: JSON.stringify({ action: 'saveAgenda', agenda: agenda }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            mode: 'cors'
           });
+          var t = await r.text();
+          var data;
+          try {
+            data = JSON.parse(t);
+          } catch (err1) {
+            throw new Error('サーバー応答を読み取れませんでした（再デプロイや通信を確認）。先頭: ' + t.slice(0, 120));
+          }
+          if (!data || !data.ok) {
+            throw new Error((data && data.error) || '議案の保存に失敗しました。');
+          }
+
+          var dateTimeLine = agenda.meetingDisplay || agenda.meetingSlotLine || '';
+          var locationLine = agenda.location || '';
+          var lineText = buildLineInviteText_(dateTimeLine, locationLine);
+          try {
+            await copyTextToClipboard_(lineText);
+          } catch (clipErr) {
+            alert(
+              'クラウドへの議案保存は完了しましたが、クリップボードへのコピーに失敗しました。次の文面を手動でコピーしてください。\n\n' +
+                lineText
+            );
+            return;
+          }
 
           alert(
-            '「' +
-              selectedDate +
-              '」' +
-              (location ? '\n開催場所: ' + location : '') +
-              '\n\n開催案内をLINEに送信指示しました！\nスマホを確認してください。',
+            'クラウドへの議案保存が完了しました！\n\nLINE用の案内文をクリップボードにコピーしましたので、そのままLINEグループに『貼り付け』して送信してください。'
           );
         } catch (e) {
-          alert('エラーが発生しました: ' + e);
+          alert('議案のクラウド保存に失敗しました。\n\n' + (e && e.message ? e.message : String(e)));
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = BTN_IDLE;
+          }
         }
-      };
+      }
+
+      window.testLine = submitCommitteeAgendaAndNotify_;
 
       document.getElementById('btn-step6-submit').addEventListener('click', function () {
-        window.testLine();
+        submitCommitteeAgendaAndNotify_();
       });
     })();
   </script>

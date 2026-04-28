@@ -7,13 +7,52 @@ var GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 /** 出欠回答の追記先スプレッドシート（スクリプトと同一の Google アカウントでアクセス可能であること） */
 const ATTENDANCE_SHEET_ID = "17S6cuRmOPDA949VNnFrcq1qrndRyBAOIWtQYoX8XOfQ";
 
+/** 管理パネルから保存する議案書データ（Properties の値は 1 キーあたり約 9KB まで） */
+var AGENDA_DATA_PROPERTY_KEY = "COMMITTEE_AGENDA_JSON_V1";
+
 // ---------------------------------------------------------------------------
 // Web: 出欠フォーム（GET）— プロジェクト内に HTML ファイル「attendance_form」を配置すること
 // ---------------------------------------------------------------------------
 function doGet(e) {
+  var p = e && e.parameter ? e.parameter : {};
+  if (p.action === "getAgenda") {
+    var agenda = getLatestAgendaData();
+    return outJson_({ ok: true, agenda: agenda });
+  }
   return HtmlService.createHtmlOutputFromFile("attendance_form")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setTitle("虐待防止委員会 出欠のご回答");
+}
+
+/**
+ * 議案データを Script Properties に保存する（JSON 文字列）
+ * @param {Object} data
+ */
+function saveAgendaData(data) {
+  var payload = data == null ? {} : data;
+  var s = JSON.stringify(payload);
+  if (s.length > 9200) {
+    throw new Error(
+      "議案データが大きすぎます（上限約9KB）。改定案のテキストを短くするか、共有メモを削ってから再度お試しください。"
+    );
+  }
+  PropertiesService.getScriptProperties().setProperty(AGENDA_DATA_PROPERTY_KEY, s);
+}
+
+/**
+ * 保存済みの議案データを返す。未保存時は null
+ * @return {Object|null}
+ */
+function getLatestAgendaData() {
+  var raw = PropertiesService.getScriptProperties().getProperty(AGENDA_DATA_PROPERTY_KEY);
+  if (!raw || !String(raw).trim()) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +96,29 @@ function doPost(e) {
   if (data && data.action === "generateRevision") {
     return handleRevisionRequest(data);
   }
+
+  if (data && data.action === "saveAgenda") {
+    return handleSaveAgendaRequest(data);
+  }
+
   return handleLineRequest(data);
+}
+
+/**
+ * 管理パネルからの議案確定（議案書 HTML が GET で読み取るデータ）
+ */
+function handleSaveAgendaRequest(data) {
+  try {
+    var agenda = data && data.agenda && typeof data.agenda === "object" ? data.agenda : {};
+    agenda.savedAt = new Date().toISOString();
+    saveAgendaData(agenda);
+    return outJson_({ ok: true });
+  } catch (ex) {
+    return outJson_({
+      ok: false,
+      error: String(ex && ex.message ? ex.message : ex),
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
