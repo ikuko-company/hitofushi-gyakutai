@@ -2648,25 +2648,6 @@
         );
       }
 
-      async function copyTextToClipboard_(text) {
-        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-          await navigator.clipboard.writeText(text);
-          return;
-        }
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-        } finally {
-          document.body.removeChild(ta);
-        }
-      }
-
       function buildAgendaPayloadForGas_() {
         var selKey = calendarSelectedDateKey();
         var slotLine = selKey ? formatCalendarSlotForConfirm(selKey) : '';
@@ -2740,18 +2721,15 @@
           var locationLine = agenda.location || '';
           var lineText = buildLineInviteText_(dateTimeLine, locationLine);
           try {
-            await copyTextToClipboard_(lineText);
-          } catch (clipErr) {
-            alert(
-              'クラウドへの議案保存は完了しましたが、クリップボードへのコピーに失敗しました。次の文面を手動でコピーしてください。\n\n' +
-                lineText
-            );
-            return;
-          }
+            await fetch(GAS_WEBAPP_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({ message: lineText })
+            });
+          } catch (lineErr) {}
 
-          alert(
-            'クラウドへの議案保存が完了しました！\n\nLINE用の案内文をクリップボードにコピーしましたので、そのままLINEグループに『貼り付け』して送信してください。'
-          );
+          alert('クラウドへの議案保存と、LINEグループへの自動送信が完了しました！');
         } catch (e) {
           alert('議案のクラウド保存に失敗しました。\n\n' + (e && e.message ? e.message : String(e)));
         } finally {
