@@ -343,47 +343,75 @@
         <h2 id="step-4-heading" class="mb-4 text-lg font-semibold text-stone-900">
           Step 4 — 虐待防止マニュアルの改定案（事業所共通）
         </h2>
-        <div class="mb-6 flex flex-col gap-2">
-          <label class="text-sm font-medium text-stone-800" for="field-step4-manual-storage-url">保管先URL</label>
-          <div
-            class="flex overflow-hidden rounded border border-gray-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-panel-accent/30"
-            id="field-step4-url-input-group"
-          >
-            <input
-              id="field-step4-manual-storage-url"
-              type="url"
-              inputmode="url"
-              autocomplete="url"
-              placeholder="https://…"
-              class="min-w-0 flex-1 border-0 px-4 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none"
-            />
-            <button
-              type="button"
-              id="btn-step4-folder-picker"
-              class="folder-addon flex shrink-0 items-center justify-center border-l border-gray-200 bg-panel-surface px-4 py-2 text-lg text-stone-600"
-              title="保管フォルダを開く（将来: ファイル保存API連携）"
-              aria-label="保管フォルダを開く"
+        <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-stone-800">
+          <p class="font-medium text-amber-900">最初に、一度だけお願いします</p>
+          <p class="mt-1.5">
+            下の「<span class="font-semibold">マニュアルのファイルを選ぶ</span>」から、お使いのマニュアル（例：manual.html
+            など）を選んでください。一度読み込まれた内容は、<span class="font-medium">同じ職場の同じ端末</span>に残り、次回からは自動で使います。共有のパソコンの場合は、別の人に内容が残らないよう、用が済んだらブラウザの閲覧履歴等を案内のとおり消してください。
+          </p>
+        </div>
+        <div class="mb-4 flex flex-col gap-2">
+          <span class="text-sm font-medium text-stone-800" id="label-manual-read">マニュアルを読み込む</span>
+          <div class="flex flex-wrap items-center gap-3">
+            <label
+              class="inline-flex cursor-pointer items-center justify-center rounded border border-panel-accent bg-white px-4 py-2 text-sm font-medium text-stone-800 shadow-sm transition hover:bg-panel-accentMuted"
             >
-              📁
-            </button>
+              マニュアルのファイルを選ぶ
+              <input
+                type="file"
+                id="input-manual-file"
+                accept=".html,.htm,.txt,text/html"
+                class="sr-only"
+              />
+            </label>
+            <span
+              id="manual-file-status"
+              class="min-w-0 flex-1 text-sm text-stone-600"
+              role="status"
+              aria-live="polite"
+              >（まだマニュアルが読み込まれていません）</span
+            >
           </div>
-          <p class="text-xs text-stone-500">📁 は入力欄内アドオン。ホバーで背景が明るくなります。</p>
+          <p
+            id="revision-prep-hint"
+            class="rounded border border-amber-100 bg-amber-50/50 px-3 py-2 text-sm text-amber-900"
+            role="status"
+          >
+            マニュアルを選び終えるまで「改定案作成」は使えません。上のボタンからファイルを選んでください。
+          </p>
+        </div>
+        <div class="mb-6 flex flex-col gap-2">
+          <label class="text-sm font-medium text-stone-800" for="field-step4-manual-link-optional"
+            >共有用のメモ（なくてもかまいません）</label
+          >
+          <input
+            id="field-step4-manual-link-optional"
+            type="text"
+            autocomplete="off"
+            placeholder="例：共有の保管場所の呼び方、紙のファイル名 など"
+            class="w-full rounded border border-gray-200 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-panel-accent focus:outline-none focus:ring-2 focus:ring-panel-accent/30"
+          />
         </div>
         <div class="rounded border border-panel-border bg-panel-surface p-4">
-          <h3 class="mb-2 text-sm font-semibold text-stone-800">AIによる改定案の要約</h3>
+          <h3 class="mb-1 text-sm font-semibold text-stone-800">AIに相談する</h3>
+          <p class="mb-3 text-xs text-stone-500">
+            国の掲示の内容（できる範囲）と、Step
+            2の「職場の状況・気になること」、今読み込んだマニュアルを照らし合わせ、直した方がよい点をまとめます。
+          </p>
           <button
             type="button"
-            id="btn-step4-create-draft-summary"
-            class="mb-4 rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted"
+            id="generateRevisionBtn"
+            disabled
+            class="mb-4 rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:border-panel-accent hover:bg-panel-accentMuted disabled:cursor-not-allowed disabled:opacity-50"
           >
             改定案作成
           </button>
           <textarea
-            id="field-step4-ai-manual-summary-text"
-            rows="8"
-            readonly
+            id="revisionOutput"
+            rows="12"
             class="w-full resize-y rounded border border-gray-200 bg-white px-2 py-2 text-sm text-stone-700"
-            placeholder="改定案の要約がここに表示されます。"
+            placeholder="改定案は、ボタンを押すと下に表示されます。"
+            aria-label="AIの改定案の文面"
           ></textarea>
         </div>
       </section>
@@ -1463,10 +1491,15 @@
 
         block(
           'Step 4 — マニュアル改定（事業所共通）',
-          '<p class="mb-2"><span class="text-stone-500">URL:</span> ' +
-            escapeHtml(val('field-step4-manual-storage-url') || '（未入力）') +
-            '</p><p class="whitespace-pre-wrap">' +
-            escapeHtml(val('field-step4-ai-manual-summary-text') || '（未生成）') +
+          '<p class="mb-2 text-xs font-medium text-stone-500">マニュアル（読み込み状況）</p><p class="mb-2">' +
+            escapeHtml(
+              (typeof window.__cpManualName === 'string' && window.__cpManualName) ||
+                '（未読み込み）'
+            ) +
+            '</p><p class="mb-1 text-xs font-medium text-stone-500">共有用メモ</p><p class="mb-2">' +
+            escapeHtml(val('field-step4-manual-link-optional') || '（なし）') +
+            '</p><p class="mb-1 text-xs font-medium text-stone-500">AIの改定案</p><p class="whitespace-pre-wrap">' +
+            escapeHtml(val('revisionOutput') || '（未生成）') +
             '</p>',
           3
         );
@@ -1792,20 +1825,306 @@
         requestThemesFromGas();
       });
 
-      document.getElementById('btn-step4-create-draft-summary').addEventListener('click', function () {
-        const url = val('field-step4-manual-storage-url');
-        document.getElementById('field-step4-ai-manual-summary-text').value =
-          '【事業所共通マニュアル改定案・要約（デモ）】\n' +
-          '・保管先: ' +
-          (url || '（URL未入力）') +
-          '\n' +
-          '・身体拘束・報告手順・職員研修の各章を最新法令に整合。\n' +
-          '・別紙チェックリストを追加し、委員会での確認項目を明確化。';
+      var CP_LS_MANUAL_TEXT = 'committee_prep_manual_text_v1';
+      var CP_LS_MANUAL_NAME = 'committee_prep_manual_name_v1';
+      var CP_LS_MANUAL_MEMO = 'committee_prep_manual_memo_v1';
+      var CP_MANUAL_MAX_STORE = 900000;
+
+      function manualHtmlToPlainTextForAi_(raw) {
+        var s = String(raw || '');
+        s = s.replace(/<script[\s\S]*?<\/script>/gi, ' ');
+        s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ');
+        var d = document.createElement('div');
+        d.innerHTML = s;
+        var t = d.textContent || d.innerText || '';
+        return t
+          .replace(/\r\n/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .replace(/[ \t\f\v]+/g, ' ')
+          .replace(/\n /g, '\n')
+          .trim();
+      }
+
+      function getManualTextForRevision_() {
+        if (typeof window.__cpManualText === 'string' && window.__cpManualText.trim()) {
+          return window.__cpManualText.trim();
+        }
+        try {
+          var t = localStorage.getItem(CP_LS_MANUAL_TEXT);
+          if (t && t.trim()) return t.trim();
+        } catch (e) {}
+        return '';
+      }
+
+      function updateRevisionControls_() {
+        var btn = document.getElementById('generateRevisionBtn');
+        var hint = document.getElementById('revision-prep-hint');
+        var has = !!getManualTextForRevision_();
+        if (btn) {
+          btn.disabled = !has;
+        }
+        if (hint) {
+          if (has) {
+            hint.className = 'rounded border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900';
+            hint.textContent =
+              'マニュアルの中身を読めました。下の「改定案作成」を押すと、AIに相談を送れます。';
+          } else {
+            hint.className = 'rounded border border-amber-100 bg-amber-50/50 px-3 py-2 text-sm text-amber-900';
+            hint.textContent = 'まず「マニュアルのファイルを選ぶ」から、使っているマニュアル（例：manual.html）を選んでください。';
+          }
+        }
+      }
+
+      function persistOptionalMemo_() {
+        var v = val('field-step4-manual-link-optional');
+        try {
+          localStorage.setItem(CP_LS_MANUAL_MEMO, v);
+        } catch (e) {}
+      }
+
+      function tryPersistManualText_(plain, fileName) {
+        var toSave = plain;
+        if (toSave.length > CP_MANUAL_MAX_STORE) {
+          toSave = toSave.substring(0, CP_MANUAL_MAX_STORE);
+        }
+        try {
+          localStorage.setItem(CP_LS_MANUAL_TEXT, toSave);
+          localStorage.setItem(CP_LS_MANUAL_NAME, fileName || 'マニュアル');
+        } catch (e) {
+          if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+            try {
+              localStorage.removeItem(CP_LS_MANUAL_TEXT);
+              var half = toSave.substring(0, Math.floor(CpManualMaxFallback_()));
+              localStorage.setItem(CP_LS_MANUAL_TEXT, half);
+              localStorage.setItem(CP_LS_MANUAL_NAME, (fileName || 'マニュアル') + '（長いため一部のみ端末に保存）');
+            } catch (e2) {}
+          }
+        }
+      }
+      function CpManualMaxFallback_() {
+        return Math.min(300000, CP_MANUAL_MAX_STORE);
+      }
+
+      function loadStoredManualToSession_() {
+        try {
+          var t = localStorage.getItem(CP_LS_MANUAL_TEXT);
+          var n = localStorage.getItem(CP_LS_MANUAL_NAME);
+          var m = localStorage.getItem(CP_LS_MANUAL_MEMO);
+          if (t && t.trim()) {
+            window.__cpManualText = t;
+            window.__cpManualName = n || '（前回のマニュアル）';
+            var st = document.getElementById('manual-file-status');
+            if (st) {
+              st.setAttribute('data-has-file', '1');
+              st.textContent = '前回使った内容を使います：「' + (n || 'マニュアル') + '」';
+            }
+            var mem = document.getElementById('field-step4-manual-link-optional');
+            if (mem && m) mem.value = m;
+          } else {
+            window.__cpManualName = window.__cpManualName || '';
+          }
+        } catch (e) {}
+        updateRevisionControls_();
+      }
+
+      function onManualFileSelected_(file) {
+        if (!file) return;
+        var statusEl = document.getElementById('manual-file-status');
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var raw = (ev && ev.target && ev.target.result) || '';
+          var plain = manualHtmlToPlainTextForAi_(String(raw));
+          if (!plain.trim()) {
+            alert('このファイルから文字を読み取れませんでした。別のファイルを選び直すか、文字が入ったファイルを用意してください。');
+            return;
+          }
+          window.__cpManualText = plain;
+          window.__cpManualName = file.name || 'マニュアル';
+          if (statusEl) {
+            statusEl.setAttribute('data-has-file', '1');
+            statusEl.textContent = '「' + (file.name || 'マニュアル') + '」を読み取りました（' + plain.length + ' 文字）';
+          }
+          tryPersistManualText_(plain, file.name);
+          updateRevisionControls_();
+        };
+        reader.onerror = function () {
+          alert('ファイルの読み取りに失敗しました。もう一度、ファイルを選び直してください。');
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+
+      function initStep4Manual_() {
+        var inp = document.getElementById('input-manual-file');
+        if (inp) {
+          inp.addEventListener('change', function () {
+            var f = inp.files && inp.files[0];
+            if (f) onManualFileSelected_(f);
+            inp.value = '';
+          });
+        }
+        var mem = document.getElementById('field-step4-manual-link-optional');
+        if (mem) {
+          mem.addEventListener('input', function () {
+            persistOptionalMemo_();
+          });
+          mem.addEventListener('blur', persistOptionalMemo_);
+        }
+        loadStoredManualToSession_();
+      }
+
+      function formatRevisionOutput_(rev) {
+        var necessity = (rev && rev.necessity) || '';
+        var reason = (rev && rev.reason) || '';
+        var details = (rev && rev.details) || '';
+        var verdict = (rev && rev.verdict) || '';
+        var concrete =
+          rev && rev.concreteRevision != null
+            ? String(rev.concreteRevision).trim()
+            : rev && rev.details != null
+              ? String(rev.details).trim()
+              : '';
+        var diffItems = (rev && rev.diffItems) || [];
+        if (!verdict) {
+          if (necessity === '今回は変更なし') {
+            verdict = '今回のマニュアルの内容のまま進めて大丈夫そうです（法令面・職場面で、すぐ直さなければならない不整合は、今回は見当たりません）';
+          } else {
+            verdict = '内容を見直し・追記するのがよさそうです。下記の違いと、具体的な文例を参考にしてください。';
+          }
+        }
+        var lines = [];
+        lines.push('--------------------------------------------------');
+        lines.push('【判定】' + verdict);
+        lines.push('');
+        lines.push('【現状との違い（要約）】');
+        if (Array.isArray(diffItems) && diffItems.length) {
+          for (var i = 0; i < diffItems.length; i++) {
+            var it = String(diffItems[i] || '').trim();
+            if (it) lines.push('・' + it);
+          }
+        } else if (rev && rev.diffSummary && String(rev.diffSummary).trim()) {
+          var parts = String(rev.diffSummary)
+            .split(/[\n\r]+/)
+            .map(function (l) {
+              return l.replace(/^[・\s]+/, '').trim();
+            })
+            .filter(Boolean);
+          if (parts.length) {
+            for (var j = 0; j < parts.length; j++) {
+              lines.push('・' + parts[j]);
+            }
+          } else {
+            lines.push('・' + String(rev.diffSummary).trim());
+          }
+        } else if (reason && String(reason).trim()) {
+          lines.push(String(reason).trim());
+        } else {
+          lines.push('・（差分の列挙はありません。根拠欄の説明をご参照ください。）');
+        }
+        if (necessity === '今回は変更なし') {
+          lines.push('');
+          lines.push('【安心のメモ】直ちに文面を変えなくてよい、という結果のときは、そのまま運用して問題ない場合が多いです。職場の会議の資料として、上の説明を共有してください。');
+        }
+        lines.push('');
+        lines.push('【具体的な改定案】');
+        lines.push(
+          concrete ||
+            (necessity === '今回は変更なし'
+              ? '特になし（今回の方針どおり、すぐ必須の改稿は想定しません）'
+              : details || '上記の違いを参考に、マニュアルの該当する場所の文を書き換えてください。')
+        );
+        if (reason && String(reason).trim()) {
+          lines.push('');
+          lines.push('（補足の説明：' + String(reason).trim() + '）');
+        }
+        lines.push('--------------------------------------------------');
+        return lines.join('\n');
+      }
+
+      async function requestRevisionFromGas() {
+        var btn = document.getElementById('generateRevisionBtn');
+        var out = document.getElementById('revisionOutput');
+        var BTN_IDLE = '改定案作成';
+        var BTN_LOAD = 'AIが法令と現状を分析中...';
+        var manualText = getManualTextForRevision_();
+        if (!manualText) {
+          alert('まだマニュアルを読み込めていません。「マニュアルのファイルを選ぶ」から、使っているファイルを先に指定してください。');
+          return;
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = BTN_LOAD;
+        }
+
+        var facilityName = (appConfig.facility && appConfig.facility.name) || '';
+        var serviceType = (appConfig.facility && appConfig.facility.serviceType) || '';
+        var situation = val('field-step2-situation-text');
+        if (!String(situation).trim()) {
+          situation = '（Step 2の「職場の状況・気になること」欄は空です。あとから追記して再度お試しいただくと、職場に合わせた内容になります。）';
+        }
+        var manualLink = val('field-step4-manual-link-optional');
+        var apiKey = (appConfig.ai && appConfig.ai.apiKey) || '';
+
+        var payload = {
+          action: 'generateRevision',
+          facilityName: facilityName,
+          serviceType: serviceType,
+          situation: situation,
+          manualText: manualText,
+          manualContent: manualText,
+          manualLink: manualLink,
+          manualStorageUrl: manualLink
+        };
+        if (apiKey) {
+          payload.apiKey = apiKey;
+        }
+
+        try {
+          var r = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            mode: 'cors'
+          });
+          var t = await r.text();
+          var data;
+          try {
+            data = JSON.parse(t);
+          } catch (err) {
+            throw new Error(
+              '戻りを読み取れませんでした。職場の手順（この画面の新しい版への切り替え）を担当の方に確認するか、時間をおいて再度「改定案作成」を押してください。先頭: ' +
+                t.slice(0, 80)
+            );
+          }
+          if (!data || !data.ok) {
+            throw new Error(
+              (data && data.error) || '相談を送れませんでした。職場の手順（つなぎ先の切り替え）を担当の方に聞くか、時間をおいて再度お試しください。'
+            );
+          }
+          if (!data.revision || typeof data.revision !== 'object') {
+            throw new Error('戻る内容の形が想定外でした。時間をおいて、もう一度「改定案作成」を押してください。');
+          }
+          if (out) {
+            out.value = formatRevisionOutput_(data.revision);
+          }
+        } catch (e) {
+          alert('改定案を表示できませんでした。' + (e && e.message ? e.message : String(e)));
+          if (out) {
+            out.value = '';
+          }
+        } finally {
+          if (btn) {
+            btn.textContent = BTN_IDLE;
+            btn.disabled = !getManualTextForRevision_();
+          }
+          updateRevisionControls_();
+        }
+      }
+
+      document.getElementById('generateRevisionBtn').addEventListener('click', function () {
+        requestRevisionFromGas();
       });
 
-      document.getElementById('btn-step4-folder-picker').addEventListener('click', function () {
-        alert('フォルダ選択（将来: ファイル保存APIと連携）');
-      });
+      initStep4Manual_();
 
       function daysInMonth(year, monthIndex) {
         return new Date(year, monthIndex + 1, 0).getDate();
