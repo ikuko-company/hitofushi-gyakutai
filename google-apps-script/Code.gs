@@ -60,7 +60,7 @@ function getLatestAgendaData() {
 // ---------------------------------------------------------------------------
 function sendLineMessage(message) {
   const CHANNEL_ACCESS_TOKEN = "xzH6qeMiBvo6TfarYw8Zf5z2idc0HhCo2OWA0EMZsD+qWrrCswvPMmBrwct5y+ZNgm4jcRtpuuS1TNsB0/uX1Li0NpQzMll3rzsRVqAxY9MmGd9I1PSui/hD0MWcMzwbS5v8vxaxdHDS3pxrXxMKUwdB04t89/1O/w1cDnyilFU=";
-  const USER_ID = "U4984fb2d4ed2f6f66e03245cf9b08d78";
+  const USER_ID = "Cb1def1c35aaf2e255a4a67ccded2ba44";
   const url = "https://api.line.me/v2/bot/message/push";
   const payload = {
     to: USER_ID,
