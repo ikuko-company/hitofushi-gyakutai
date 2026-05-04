@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>議事録の作成・編集 — ワークショップひとふし</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Meiryo UI"', 'Meiryo', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-stone-50 text-stone-900 antialiased">
+  <div class="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-6 lg:flex-row lg:items-start lg:gap-8 lg:px-6 lg:py-8">
+    <!-- メイン: 議事録プレビュー（A4風） -->
+    <main class="min-w-0 flex-1">
+      <div class="mx-auto max-w-3xl rounded-sm border border-stone-200/80 bg-white px-6 py-10 shadow-lg shadow-stone-300/40 sm:px-10 sm:py-12 md:px-12 md:py-14">
+        <header class="mb-8 border-b border-stone-200 pb-6 text-center">
+          <p class="mb-1 text-xs font-medium tracking-wide text-stone-500">議事録（草案）</p>
+          <h1 class="text-lg font-bold leading-snug text-stone-900 sm:text-xl">
+            ワークショップひとふし 虐待防止委員会議事録
+          </h1>
+        </header>
+
+        <dl class="mb-8 space-y-3 text-sm leading-relaxed text-stone-800">
+          <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+            <dt class="shrink-0 font-semibold text-stone-600 sm:w-28">開催日時</dt>
+            <dd>
+              <span class="inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-900">
+                {{ 未入力 }}
+              </span>
+            </dd>
+          </div>
+          <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+            <dt class="shrink-0 font-semibold text-stone-600 sm:w-28">開催場所</dt>
+            <dd>
+              <span class="inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-900">
+                {{ 未入力 }}
+              </span>
+            </dd>
+          </div>
+        </dl>
+
+        <section class="mb-8">
+          <h2 class="mb-2 border-l-4 border-orange-400 pl-3 text-sm font-bold text-stone-800">出席者</h2>
+          <p class="pl-1 text-sm leading-relaxed text-stone-700">
+            福田由美子、奥野博彦、平賀郁子、山田太郎、佐藤花子、鈴木一郎、高橋美咲、伊藤健司
+          </p>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="mb-3 border-l-4 border-orange-400 pl-3 text-sm font-bold text-stone-800">議題</h2>
+          <ol class="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-stone-700 marker:font-semibold marker:text-stone-600">
+            <li>虐待防止委員会の設置及び委員の任命について</li>
+            <li>現状把握と課題の洗い出しについて</li>
+            <li>次回開催予定及びその他</li>
+          </ol>
+        </section>
+
+        <section class="mb-10">
+          <h2 class="mb-3 border-l-4 border-orange-400 pl-3 text-sm font-bold text-stone-800">議事内容</h2>
+
+          <article class="mb-6">
+            <h3 class="mb-2 text-sm font-semibold text-stone-800">議題① 虐待防止委員会の設置及び委員の任命について</h3>
+            <div class="rounded-md border border-stone-100 bg-stone-50/80 px-3 py-3 text-sm leading-relaxed text-stone-700">
+              <p>
+                委員長として福田由美子が任命された旨を確認した。委員として奥野博彦、平賀郁子ほか全員の氏名を読み上げ、異議がないことを確認のうえ、本委員会の設置が承認された。
+              </p>
+            </div>
+          </article>
+
+          <article class="mb-6">
+            <h3 class="mb-2 text-sm font-semibold text-stone-800">議題② 現状把握と課題の洗い出しについて</h3>
+            <div class="rounded-md border border-dashed border-violet-200 bg-violet-50/60 px-3 py-4 text-center text-sm text-violet-800">
+              <span class="font-medium">{{ AIによる要約待ち }}</span>
+            </div>
+          </article>
+
+          <article>
+            <h3 class="mb-2 text-sm font-semibold text-stone-800">議題③ 次回開催予定及びその他</h3>
+            <div class="rounded-md border border-dashed border-violet-200 bg-violet-50/60 px-3 py-4 text-center text-sm text-violet-800">
+              <span class="font-medium">{{ AIによる要約待ち }}</span>
+            </div>
+          </article>
+        </section>
+
+        <footer class="border-t border-stone-200 pt-4 text-center text-xs text-stone-400">
+          本画面はプレビュー用のモックです。確定・保存は右パネルから行います。
+        </footer>
+      </div>
+    </main>
+
+    <!-- サイド: 操作パネル -->
+    <aside class="w-full shrink-0 lg:sticky lg:top-8 lg:w-[22rem] xl:w-96">
+      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-md shadow-stone-200/50 sm:p-6">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">ワークフロー</p>
+        <h2 class="mb-6 text-base font-bold text-stone-900">議事録を完成させる</h2>
+
+        <div class="space-y-6">
+          <!-- Step 1 -->
+          <div class="relative rounded-lg border border-stone-200 bg-stone-50/50 p-4">
+            <span class="absolute -top-2.5 left-3 inline-flex rounded bg-stone-800 px-2 py-0.5 text-[10px] font-bold text-white">
+              Step 1
+            </span>
+            <h3 class="mb-1 mt-1 text-sm font-bold text-stone-800">音声アップロード</h3>
+            <p class="mb-3 text-xs leading-relaxed text-stone-600">
+              会議の録音（m4a / mp3 等）を選択してください。議案に沿った議事録の空欄を埋めるために利用します。
+            </p>
+            <label class="block cursor-pointer rounded-lg border border-dashed border-stone-300 bg-white px-3 py-4 text-center transition hover:border-orange-300 hover:bg-orange-50/30">
+              <span class="text-xs font-medium text-stone-600">ファイルを選択</span>
+              <input type="file" accept="audio/*" class="mt-2 block w-full cursor-pointer text-xs text-stone-600 file:mr-2 file:rounded file:border-0 file:bg-orange-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-orange-700" />
+            </label>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="relative rounded-lg border border-stone-200 bg-stone-50/50 p-4">
+            <span class="absolute -top-2.5 left-3 inline-flex rounded bg-stone-800 px-2 py-0.5 text-[10px] font-bold text-white">
+              Step 2
+            </span>
+            <h3 class="mb-1 mt-1 text-sm font-bold text-stone-800">AI 自動生成</h3>
+            <p class="mb-3 text-xs leading-relaxed text-stone-600">
+              アップロードした音声を解析し、未入力欄や「要約待ち」箇所を自動で補完します。
+            </p>
+            <button
+              type="button"
+              class="w-full rounded-lg bg-orange-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-orange-600/25 transition hover:bg-orange-700 hover:shadow-lg active:scale-[0.99]"
+            >
+              音声を解析して空欄を埋める
+            </button>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="relative rounded-lg border border-stone-200 bg-stone-50/50 p-4">
+            <span class="absolute -top-2.5 left-3 inline-flex rounded bg-stone-800 px-2 py-0.5 text-[10px] font-bold text-white">
+              Step 3
+            </span>
+            <h3 class="mb-1 mt-1 text-sm font-bold text-stone-800">手動修正</h3>
+            <p class="mb-3 text-xs leading-relaxed text-stone-600">
+              AI の結果を確認し、必要に応じて本文を直接編集します（編集 UI は今後接続予定）。
+            </p>
+            <button
+              type="button"
+              class="w-full rounded-lg border-2 border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 active:scale-[0.99]"
+            >
+              内容を手動で修正する
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-8 border-t border-stone-200 pt-6">
+          <button
+            type="button"
+            class="w-full rounded-lg bg-stone-800 px-4 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-stone-900 active:scale-[0.99]"
+          >
+            この内容で議事録を確定・保存
+          </button>
+          <p class="mt-2 text-center text-[11px] text-stone-500">確定後は版としてロックされる想定です（モックのため動作しません）。</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

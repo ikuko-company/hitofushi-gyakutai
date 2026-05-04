@@ -69,9 +69,10 @@
       opacity: 0.45;
       pointer-events: none;
     }
-    .group-gap-after > tr.last-in-group > td {
-      border-bottom-width: 2px;
-      border-bottom-color: rgb(253 230 200);
+    /** 事業所表: グループ切替時の視覚的な空白（罫線なし） */
+    tr.office-group-spacer td {
+      border: none !important;
+      vertical-align: middle;
     }
   </style>
 </head>
@@ -116,22 +117,15 @@
 
     <!-- 【事業所単位】 -->
     <section class="mb-5 scroll-mt-4" aria-labelledby="office-heading">
-      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="mb-2">
         <h2 id="office-heading" class="text-sm font-bold text-stone-900 sm:text-base">【事業所単位】進捗確認表</h2>
-        <button
-          type="button"
-          class="inline-flex h-8 min-w-[8.5rem] items-center justify-center rounded px-3 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99] sm:text-sm"
-          style="background-color: #C65911"
-          onclick="openScheduleCreate('事業所単位')"
-        >
-          スケジュール作成
-        </button>
       </div>
       <div class="overflow-x-auto rounded border border-stone-200 bg-white shadow-sm">
-        <table class="dash-table group-gap-after min-w-[880px] w-full text-left text-sm" id="office-table">
+        <table class="dash-table min-w-[980px] w-full text-left text-sm" id="office-table">
           <thead>
             <tr class="bg-sheet-peach text-stone-900">
               <th class="min-w-[10.5rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">委員会・研修・訓練名</th>
+              <th class="min-w-[6.25rem] px-1 py-1.5 text-center text-[10px] font-semibold leading-tight text-stone-700">操作</th>
               <th class="min-w-[13rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">内容</th>
               <th class="w-24 min-w-[5.5rem] px-1.5 py-1.5 text-center text-[11px] font-semibold">頻度</th>
               <th class="w-[4.5rem] min-w-[4.25rem] bg-orange-50/80 px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight">予定日①</th>
@@ -149,16 +143,8 @@
 
     <!-- 【施設単位】 -->
     <section class="mb-4 scroll-mt-4" aria-labelledby="facility-heading">
-      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="mb-2">
         <h2 id="facility-heading" class="text-sm font-bold text-stone-900 sm:text-base">【施設単位】進捗確認表（防災関連）</h2>
-        <button
-          type="button"
-          class="inline-flex h-8 min-w-[8.5rem] items-center justify-center rounded px-3 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.99] sm:text-sm"
-          style="background-color: #C65911"
-          onclick="openScheduleCreate('施設単位')"
-        >
-          スケジュール作成
-        </button>
       </div>
       <div class="overflow-x-auto rounded border border-stone-200 bg-white shadow-sm">
         <table class="dash-table min-w-[1040px] w-full text-left text-sm" id="facility-table">
@@ -282,11 +268,45 @@
       return index % 2 === 0 ? 'bg-white' : 'bg-sheet-rowAlt/80';
     }
 
+    /** 事業所表の列数（スペーサー行の colspan 用） */
+    const OFFICE_TABLE_COL_COUNT = 10;
+
+    /**
+     * 項目名に応じた個別操作ボタン（ダミー。onclick なし）
+     * @param {string} rowName
+     */
+    function buildOfficeRowActionButtonsHtml(rowName) {
+      const btnClass =
+        'rounded border border-stone-300 bg-white px-1 py-0.5 text-[10px] font-medium leading-tight text-stone-600 transition-colors hover:bg-stone-100 sm:px-1.5 sm:text-[11px]';
+      const stack = 'flex flex-col items-stretch gap-1 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-1';
+      if (rowName.includes('委員会')) {
+        return `<div class="${stack}">
+          <button type="button" class="${btnClass}">開催準備</button>
+          <button type="button" class="${btnClass}">議事録作成</button>
+        </div>`;
+      }
+      if (rowName.includes('研修') || rowName.includes('訓練')) {
+        return `<div class="${stack}">
+          <button type="button" class="${btnClass}">研修設計</button>
+          <button type="button" class="${btnClass}">研修記録</button>
+        </div>`;
+      }
+      return '<span class="block text-center text-stone-400">—</span>';
+    }
+
     function renderOfficeTable() {
       const tbody = document.getElementById('office-tbody');
       const frag = document.createDocumentFragment();
 
       OFFICE_ROWS_META.forEach((row, index) => {
+        if (index > 0 && row.group !== OFFICE_ROWS_META[index - 1].group) {
+          const spacer = document.createElement('tr');
+          spacer.className = 'office-group-spacer';
+          spacer.setAttribute('aria-hidden', 'true');
+          spacer.innerHTML = `<td colspan="${OFFICE_TABLE_COL_COUNT}" class="h-8 max-h-8 border-0 bg-white p-0"></td>`;
+          frag.appendChild(spacer);
+        }
+
         const tr = document.createElement('tr');
         tr.dataset.rowId = row.id;
         tr.dataset.rowStatus = 'neutral';
@@ -294,12 +314,14 @@
         const disabledFacility = row.facilityOnly && isOfficeFacilityRowDisabled();
         const d = OFFICE_DATES_INITIAL[row.id] || {};
 
-        if (row.lastInGroup) tr.classList.add('last-in-group');
         tr.classList.add(officeRowBg(index));
 
         const nameCell = disabledFacility
           ? `<button type="button" class="dash-pill-btn w-full px-1.5 py-1.5 text-left text-[11px] sm:text-xs" disabled title="施設が2件以上のため事業所表では無効">${row.name}</button>`
           : `<button type="button" class="dash-pill-btn w-full px-1.5 py-1.5 text-left text-[11px] font-medium sm:text-xs" onclick="openSettingsPage('${row.name.replace(/'/g, "\\'")}')">${row.name}</button>`;
+
+        const actionHtml = buildOfficeRowActionButtonsHtml(row.name);
+        const actionCell = `<td class="px-1 py-1.5 text-center align-middle ${disabledFacility ? 'opacity-40' : ''}">${actionHtml}</td>`;
 
         const freqCell = `<td class="px-1.5 py-1 text-center text-stone-600">${row.freq}</td>`;
 
@@ -313,6 +335,7 @@
 
         tr.innerHTML = `
           <td class="p-0">${nameCell}</td>
+          ${actionCell}
           <td class="px-1.5 py-1 text-stone-700">${row.content}</td>
           ${freqCell}
           ${cells.join('')}
@@ -364,10 +387,6 @@
 
     function openSettingsPage(label) {
       console.log(label + 'の設定ページへ移動');
-    }
-
-    function openScheduleCreate(scopeLabel) {
-      console.log(scopeLabel + 'のスケジュール作成の設定ページへ移動');
     }
 
     function onFiscalYearChange(year) {
